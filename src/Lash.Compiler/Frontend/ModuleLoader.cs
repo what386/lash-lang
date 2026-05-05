@@ -255,7 +255,7 @@ public static class ModuleLoader
 
         while (cursor < template.Length)
         {
-            var openBrace = FindNextUnescaped(template, '{', cursor);
+            var openBrace = LashInterpolation.FindNextUnescaped(template, '{', cursor);
             if (openBrace < 0)
             {
                 AppendAnsiCStringSegment(output, template[cursor..]);
@@ -264,7 +264,7 @@ public static class ModuleLoader
 
             AppendAnsiCStringSegment(output, template[cursor..openBrace]);
 
-            var closeBrace = FindNextUnescaped(template, '}', openBrace + 1);
+            var closeBrace = LashInterpolation.FindNextUnescaped(template, '}', openBrace + 1);
             if (closeBrace < 0)
             {
                 AppendAnsiCStringSegment(output, template[openBrace..]);
@@ -272,7 +272,7 @@ public static class ModuleLoader
             }
 
             var placeholder = template[(openBrace + 1)..closeBrace].Trim();
-            if (TryGetIdentifierPath(placeholder, out var path))
+            if (LashIdentifier.TryGetBashPath(placeholder, out var path))
             {
                 output.Append("\"${");
                 output.Append(path);
@@ -295,37 +295,6 @@ public static class ModuleLoader
             return;
 
         output.Append(EscapeAsAnsiCString(segment));
-    }
-
-    private static int FindNextUnescaped(string text, char needle, int start)
-    {
-        for (int i = start; i < text.Length; i++)
-        {
-            if (text[i] == needle && (i == 0 || text[i - 1] != '\\'))
-                return i;
-        }
-
-        return -1;
-    }
-
-    private static bool TryGetIdentifierPath(string value, out string path)
-    {
-        path = string.Empty;
-        if (string.IsNullOrWhiteSpace(value))
-            return false;
-
-        var parts = value.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (parts.Length == 0)
-            return false;
-
-        foreach (var part in parts)
-        {
-            if (!IsIdentifier(part))
-                return false;
-        }
-
-        path = string.Join("_", parts);
-        return true;
     }
 
     private static void UpdateEnumDeclarationState(string trimmedLine, ref bool inEnumDeclaration)

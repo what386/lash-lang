@@ -35,9 +35,7 @@ internal static class LashIdentifier
         if (string.IsNullOrWhiteSpace(input))
             return false;
 
-        var parts = input.Split(
-            '.',
-            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var parts = input.Split('.', StringSplitOptions.TrimEntries);
         if (parts.Length == 0)
             return false;
 

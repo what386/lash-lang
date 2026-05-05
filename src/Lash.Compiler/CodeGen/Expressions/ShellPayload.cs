@@ -17,7 +17,7 @@ internal sealed partial class ExpressionGenerator
 
         while (cursor < template.Length)
         {
-            var openBrace = CodeGenInterpolation.FindNextUnescaped(template, '{', cursor);
+            var openBrace = LashInterpolation.FindNextUnescaped(template, '{', cursor);
             if (openBrace < 0)
             {
                 var tail = template[cursor..];
@@ -29,7 +29,7 @@ internal sealed partial class ExpressionGenerator
             builder.Append(UnescapeShellPayloadText(literalSegment));
             UpdateShellQuoteState(literalSegment, ref quoteState);
 
-            var closeBrace = CodeGenInterpolation.FindNextUnescaped(template, '}', openBrace + 1);
+            var closeBrace = LashInterpolation.FindNextUnescaped(template, '}', openBrace + 1);
             if (closeBrace < 0)
             {
                 var rawRemainder = template[openBrace..];
@@ -38,11 +38,11 @@ internal sealed partial class ExpressionGenerator
             }
 
             var placeholder = template[(openBrace + 1)..closeBrace].Trim();
-            if (CodeGenInterpolation.TryGetIdentifierPath(placeholder, out var path))
+            if (LashIdentifier.TryGetBashPath(placeholder, out var path))
             {
                 if (quoteState.InSingleQuote)
                     builder.Append("'\"");
-                CodeGenInterpolation.AppendIdentifierExpansion(builder, path);
+                LashInterpolation.AppendBashExpansion(builder, path);
                 if (quoteState.InSingleQuote)
                     builder.Append("\"'");
             }

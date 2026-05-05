@@ -352,6 +352,52 @@ public class BashGeneratorTests
     }
 
     [Fact]
+    public void BashGenerator_InterpolatesDottedIdentifierPaths()
+    {
+        var program = TestCompiler.ParseOrThrow(
+            """
+            var user_name = "Rob"
+            let greeting = $"Hello { user.name }!"
+            """);
+
+        var bash = new BashGenerator().Generate(program);
+        Assert.Contains("greeting=\"Hello ${user_name}!\"", bash);
+    }
+
+    [Fact]
+    public void BashGenerator_LeavesMalformedDottedPlaceholdersLiteral()
+    {
+        var program = TestCompiler.ParseOrThrow(
+            """
+            var name_bad = "expanded"
+            let leading = $"A {.name} B"
+            let trailing = $"A {name.} B"
+            let doubled = $"A {name..bad} B"
+            """);
+
+        var bash = new BashGenerator().Generate(program);
+        Assert.Contains("leading=\"A {.name} B\"", bash);
+        Assert.Contains("trailing=\"A {name.} B\"", bash);
+        Assert.Contains("doubled=\"A {name..bad} B\"", bash);
+        Assert.DoesNotContain("${name_bad}", bash);
+    }
+
+    [Fact]
+    public void BashGenerator_UsesBackslashParityForEscapedInterpolationBraces()
+    {
+        var program = TestCompiler.ParseOrThrow(
+            """
+            var name = "Rob"
+            let odd = $"A \{name}"
+            let even = $"A \\{name}"
+            """);
+
+        var bash = new BashGenerator().Generate(program);
+        Assert.Contains("odd=\"A \\\\{name}\"", bash);
+        Assert.Contains("even=\"A \\\\\\\\${name}\"", bash);
+    }
+
+    [Fact]
     public void BashGenerator_FoldsInterpolatedStringWithConstInputs()
     {
         var program = TestCompiler.ParseOrThrow(
