@@ -14,7 +14,7 @@ public class SyntaxDiagnosticFormattingTests {
 
         var error = diagnostics.GetErrors().First();
         Assert.Contains("Unrecognized symbol '@'", error.Message);
-        Assert.Contains("Tip:", error.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("Tip:", error.Message, StringComparison.Ordinal);
   }
 
   [Fact]
@@ -28,6 +28,7 @@ public class SyntaxDiagnosticFormattingTests {
         var error = Assert.Single(diagnostics.GetErrors());
         Assert.Contains("'end'", error.Message);
         Assert.DoesNotContain("expecting {", error.Message);
+        Assert.DoesNotContain("Tip:", error.Message, StringComparison.Ordinal);
   }
 
   [Fact]
@@ -52,12 +53,12 @@ public class SyntaxDiagnosticFormattingTests {
         Assert.Contains("Unexpected end of file", error.Message, StringComparison.Ordinal);
         Assert.Contains("missing 'end'", error.Message, StringComparison.Ordinal);
         Assert.Contains("'if' opened at line 1", error.Message, StringComparison.Ordinal);
-        Assert.Contains("Tip:", error.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("Tip:", error.Message, StringComparison.Ordinal);
 
-        var info = Assert.Single(diagnostics.GetInfos());
-        Assert.Equal(DiagnosticCodes.ParseUnclosedBlockInfo, info.Code);
-        Assert.Equal(1, info.Line);
-        Assert.Contains("Unclosed 'if' block starts here.", info.Message, StringComparison.Ordinal);
+        var infos = diagnostics.GetInfos().ToList();
+        var unclosedInfo = Assert.Single(infos, i => i.Code == DiagnosticCodes.ParseUnclosedBlockInfo);
+        Assert.Equal(1, unclosedInfo.Line);
+        Assert.Contains("Unclosed 'if' block starts here.", unclosedInfo.Message, StringComparison.Ordinal);
   }
 
   [Fact]
@@ -73,9 +74,39 @@ public class SyntaxDiagnosticFormattingTests {
         var error = Assert.Single(diagnostics.GetErrors());
         Assert.Contains("'if' opened at line 2", error.Message, StringComparison.Ordinal);
 
-        var info = Assert.Single(diagnostics.GetInfos());
-        Assert.Equal(2, info.Line);
-        Assert.Contains("Unclosed 'if' block starts here.", info.Message, StringComparison.Ordinal);
+        var infos = diagnostics.GetInfos().ToList();
+        var unclosedInfo = Assert.Single(infos, i => i.Code == DiagnosticCodes.ParseUnclosedBlockInfo);
+        Assert.Equal(2, unclosedInfo.Line);
+        Assert.Contains("Unclosed 'if' block starts here.", unclosedInfo.Message, StringComparison.Ordinal);
+  }
+
+  [Fact]
+  public void ParserErrors_ReportIndentationMismatchInfo_ForLikelyMissingEnd() {
+        var diagnostics = Parse(
+            """
+            if true
+                let inside = 1
+            let dedented = 2
+            """);
+
+        var mismatchInfo = Assert.Single(
+            diagnostics.GetInfos(),
+            i => i.Code == DiagnosticCodes.ParseIndentationMismatchInfo);
+        Assert.Contains("'let' statement at line 3", mismatchInfo.Message, StringComparison.Ordinal);
+        Assert.Contains("'if' opened at line 1", mismatchInfo.Message, StringComparison.Ordinal);
+        Assert.Contains("missing 'end'", mismatchInfo.Message, StringComparison.Ordinal);
+  }
+
+  [Fact]
+  public void ParserErrors_DoesNotReportIndentationMismatchInfo_WithoutDedentSignal() {
+        var diagnostics = Parse(
+            """
+            if true
+            echo "still flat"
+            """);
+
+        Assert.DoesNotContain(diagnostics.GetInfos(),
+            info => info.Code == DiagnosticCodes.ParseIndentationMismatchInfo);
   }
 
   [Fact]
@@ -112,7 +143,7 @@ public class SyntaxDiagnosticFormattingTests {
         Assert.True(diagnostics.HasErrors);
         var error = diagnostics.GetErrors().First();
         Assert.Contains("<<<", error.Message, StringComparison.Ordinal);
-        Assert.Contains("Use '<<'", error.Message, StringComparison.Ordinal);
+        Assert.Contains("'<<'", error.Message, StringComparison.Ordinal);
   }
 
   private static DiagnosticBag Parse(string source) {

@@ -21,7 +21,10 @@ public class TypeCheckerTests
         var diagnostics = new DiagnosticBag();
         new TypeChecker(diagnostics).Analyze(program);
 
-        Assert.Contains(diagnostics.GetErrors(), e => e.Code == DiagnosticCodes.TypeMismatch && e.Message.Contains("Cannot add number and string", StringComparison.Ordinal));
+        Assert.Contains(diagnostics.GetErrors(), e =>
+            e.Code == DiagnosticCodes.TypeMismatch &&
+            e.Message.Contains("Cannot add number and string", StringComparison.Ordinal) &&
+            !e.Message.Contains("Tip:", StringComparison.Ordinal));
     }
 
     [Fact]

@@ -155,6 +155,7 @@ public class NameResolverTests
         var arityErrors = diagnostics.GetErrors().Where(e => e.Code == DiagnosticCodes.FunctionArityMismatch).ToList();
         Assert.Equal(2, arityErrors.Count);
         Assert.All(arityErrors, error => Assert.Contains("Function 'greet' expects 1..2", error.Message, StringComparison.Ordinal));
+        Assert.All(arityErrors, error => Assert.DoesNotContain("Tip:", error.Message, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -168,7 +169,10 @@ public class NameResolverTests
         var diagnostics = new DiagnosticBag();
         new NameResolver(diagnostics).Analyze(program);
 
-        Assert.Contains(diagnostics.GetErrors(), e => e.Code == DiagnosticCodes.UnknownFunction && e.Message.Contains("Unknown function 'missing'", StringComparison.Ordinal));
+        Assert.Contains(diagnostics.GetErrors(), e =>
+            e.Code == DiagnosticCodes.UnknownFunction &&
+            e.Message.Contains("Unknown function 'missing'", StringComparison.Ordinal) &&
+            !e.Message.Contains("Tip:", StringComparison.Ordinal));
     }
 
     [Fact]

@@ -443,7 +443,7 @@ public sealed class CodegenFeasibilityAnalyzer
         diagnostics.AddError(
             DiagnosticMessage.WithTip(
                 "Shell command payload must be a string literal for Bash code generation.",
-                "Use a string literal/interpolated string in-place, or move dynamic construction into a plain shell command statement."),
+                null),
             line,
             column,
             DiagnosticCodes.UnsupportedExpressionForCodegen);
@@ -451,12 +451,7 @@ public sealed class CodegenFeasibilityAnalyzer
 
     private void Report(AstNode node, string message, string code)
     {
-        var tip = code switch
-        {
-            DiagnosticCodes.UnsupportedExpressionForCodegen => "Rewrite this expression using a supported Bash-lowerable form.",
-            DiagnosticCodes.UnsupportedStatementForCodegen => "Rewrite this statement to a supported construct or plain shell command.",
-            _ => null
-        };
+        string? tip = null;
 
         diagnostics.AddError(DiagnosticMessage.WithTip(message, tip), node.Line, node.Column, code);
     }

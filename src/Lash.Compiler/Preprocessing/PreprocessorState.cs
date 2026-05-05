@@ -170,9 +170,7 @@ internal sealed class PreprocessorState
             if (block.Kind == PreprocessorBlockKind.Conditional)
             {
                 Diagnostics.AddError(
-                    DiagnosticMessage.WithTip(
-                        $"Missing '@end' for '@if' started on line {block.StartLine}.",
-                        "Add '@end' to close the conditional directive block."),
+                    $"Missing '@end' for '@if' started on line {block.StartLine}.",
                     block.StartLine,
                     block.StartColumn,
                     DiagnosticCodes.PreprocessorConditionalStructure);
@@ -180,9 +178,7 @@ internal sealed class PreprocessorState
             else
             {
                 Diagnostics.AddError(
-                    DiagnosticMessage.WithTip(
-                        $"Missing '@end' for '@raw' started on line {block.StartLine}.",
-                        "Add '@end' to close the raw directive block."),
+                    $"Missing '@end' for '@raw' started on line {block.StartLine}.",
                     block.StartLine,
                     block.StartColumn,
                     DiagnosticCodes.PreprocessorConditionalStructure);

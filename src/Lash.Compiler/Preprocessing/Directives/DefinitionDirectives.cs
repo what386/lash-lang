@@ -14,7 +14,7 @@ internal sealed class DefineDirective : IPreprocessorDirective
         if (!DirectiveProcessor.TryParseDefinition(directive.Arguments, out var name, out var value, out var error))
         {
             state.AddError(
-                DiagnosticMessage.WithTip($"Invalid @define directive: {error}", "Expected: @define NAME, @define NAME=value, or @define NAME value."),
+                DiagnosticMessage.WithTip($"Invalid @define directive: {error}", "Use '@define NAME', '@define NAME=value', or '@define NAME value'."),
                 DiagnosticCodes.PreprocessorDirectiveSyntax);
             return;
         }
@@ -35,7 +35,7 @@ internal sealed class UndefDirective : IPreprocessorDirective
         if (!DirectiveProcessor.TryParseSymbolName(directive.Arguments, out var name, out var error))
         {
             state.AddError(
-                DiagnosticMessage.WithTip($"Invalid @undef directive: {error}", "Expected: @undef NAME"),
+                DiagnosticMessage.WithTip($"Invalid @undef directive: {error}", "Use '@undef NAME'."),
                 DiagnosticCodes.PreprocessorDirectiveSyntax);
             return;
         }

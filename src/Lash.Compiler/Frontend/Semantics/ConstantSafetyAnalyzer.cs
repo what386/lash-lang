@@ -46,7 +46,7 @@ public sealed class ConstantSafetyAnalyzer
                     diagnostics.AddError(
                         DiagnosticMessage.WithTip(
                             $"Operator '{assignment.Operator}' cannot use a right-hand operand of 0.",
-                            "Ensure the divisor/modulo operand is non-zero."),
+                            null),
                         assignment.Value.Line,
                         assignment.Value.Column,
                         DiagnosticCodes.DivisionOrModuloByZero);
@@ -105,7 +105,7 @@ public sealed class ConstantSafetyAnalyzer
                         diagnostics.AddError(
                             DiagnosticMessage.WithTip(
                                 "For-loop step cannot be 0.",
-                                "Use a positive or negative non-zero step value."),
+                                null),
                             forLoop.Step.Line,
                             forLoop.Step.Column,
                             DiagnosticCodes.InvalidForStep);
@@ -140,7 +140,7 @@ public sealed class ConstantSafetyAnalyzer
                     diagnostics.AddError(
                         DiagnosticMessage.WithTip(
                             "Shift amount cannot be negative.",
-                            "Use shift 0 or a positive integer."),
+                            null),
                         shiftStatement.Amount.Line,
                         shiftStatement.Amount.Column,
                         DiagnosticCodes.InvalidShiftAmount);
@@ -199,7 +199,7 @@ public sealed class ConstantSafetyAnalyzer
                     diagnostics.AddError(
                         DiagnosticMessage.WithTip(
                             $"Operator '{binary.Operator}' cannot use a right-hand operand of 0.",
-                            "Ensure the divisor/modulo operand is non-zero."),
+                            null),
                         binary.Right.Line,
                         binary.Right.Column,
                         DiagnosticCodes.DivisionOrModuloByZero);

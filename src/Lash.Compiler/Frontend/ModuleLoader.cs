@@ -60,7 +60,7 @@ public static class ModuleLoader
         if (diagnostics.HasErrors)
             return false;
 
-        var unclosedBlockHint = BlockStructureAnalyzer.FindInnermostUnclosedBlock(source);
+        var blockScanResult = BlockStructureAnalyzer.Analyze(source);
 
         var input = new AntlrInputStream(source);
         var lexer = new LashLexer(input);
@@ -70,7 +70,7 @@ public static class ModuleLoader
         lexer.RemoveErrorListeners();
         parser.RemoveErrorListeners();
         lexer.AddErrorListener(new LoaderLexerErrorListener(diagnostics, path));
-        parser.AddErrorListener(new LoaderParserErrorListener(diagnostics, path, unclosedBlockHint));
+        parser.AddErrorListener(new LoaderParserErrorListener(diagnostics, path, blockScanResult));
 
         var parseTree = parser.program();
         if (diagnostics.HasErrors)
@@ -1161,9 +1161,10 @@ internal static class BlockStructureAnalyzer
         "coproc"
     };
 
-    public static UnclosedBlockHint? FindInnermostUnclosedBlock(string source)
+    public static BlockScanResult Analyze(string source)
     {
-        var stack = new Stack<UnclosedBlockHint>();
+        var stack = new Stack<BlockFrame>();
+        IndentationMismatchHint? mismatchHint = null;
         var lines = source.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
         var inBlockComment = false;
         var inMultilineString = false;
@@ -1179,6 +1180,30 @@ internal static class BlockStructureAnalyzer
             if (keyword == null)
                 continue;
 
+            var indent = line.Length - line.TrimStart().Length;
+            if (stack.Count > 0)
+            {
+                var current = stack.Peek();
+                if (indent > current.Indent)
+                    current.HasIndentedBody = true;
+
+                if (mismatchHint is null &&
+                    current.HasIndentedBody &&
+                    indent <= current.Indent &&
+                    !IsAllowedSameLevelKeyword(current.Keyword, keyword) &&
+                    !string.Equals(keyword, "end", StringComparison.Ordinal))
+                {
+                    mismatchHint = new IndentationMismatchHint(
+                        current.Keyword,
+                        current.Line,
+                        current.Indent,
+                        keyword,
+                        i + 1,
+                        indent,
+                        current);
+                }
+            }
+
             if (string.Equals(keyword, "end", StringComparison.Ordinal))
             {
                 if (stack.Count > 0)
@@ -1189,11 +1214,20 @@ internal static class BlockStructureAnalyzer
             if (!BlockOpeners.Contains(keyword))
                 continue;
 
-            var column = line.Length - line.TrimStart().Length;
-            stack.Push(new UnclosedBlockHint(keyword, i + 1, column));
+            stack.Push(new BlockFrame(keyword, i + 1, indent));
         }
 
-        return stack.Count == 0 ? null : stack.Peek();
+        UnclosedBlockHint? unclosedBlockHint = stack.Count == 0
+            ? null
+            : new UnclosedBlockHint(stack.Peek().Keyword, stack.Peek().Line, stack.Peek().Indent);
+
+        if (mismatchHint is not null &&
+            !stack.Any(frame => ReferenceEquals(frame, mismatchHint.Value.BlockFrame)))
+        {
+            mismatchHint = null;
+        }
+
+        return new BlockScanResult(unclosedBlockHint, mismatchHint);
     }
 
     private static string NormalizeForBlockScan(string line, ref bool inBlockComment, ref bool inMultilineString)
@@ -1250,20 +1284,65 @@ internal static class BlockStructureAnalyzer
 
         return line[..firstSpace];
     }
+
+    private static bool IsAllowedSameLevelKeyword(string openerKeyword, string statementKeyword)
+    {
+        if (string.Equals(openerKeyword, "if", StringComparison.Ordinal))
+        {
+            return string.Equals(statementKeyword, "elif", StringComparison.Ordinal) ||
+                   string.Equals(statementKeyword, "else", StringComparison.Ordinal);
+        }
+
+        if (string.Equals(openerKeyword, "switch", StringComparison.Ordinal))
+            return string.Equals(statementKeyword, "case", StringComparison.Ordinal);
+
+        return false;
+    }
+
+    private sealed class BlockFrame
+    {
+        public BlockFrame(string keyword, int line, int indent)
+        {
+            Keyword = keyword;
+            Line = line;
+            Indent = indent;
+        }
+
+        public string Keyword { get; }
+        public int Line { get; }
+        public int Indent { get; }
+        public bool HasIndentedBody { get; set; }
+    }
 }
+
+internal readonly record struct BlockScanResult(
+    UnclosedBlockHint? UnclosedBlockHint,
+    IndentationMismatchHint? IndentationMismatchHint);
+
+internal readonly record struct IndentationMismatchHint(
+    string OpenKeyword,
+    int OpenLine,
+    int OpenIndent,
+    string StatementKeyword,
+    int StatementLine,
+    int StatementIndent,
+    object BlockFrame);
 
 internal sealed class LoaderParserErrorListener : BaseErrorListener
 {
     private readonly DiagnosticBag diagnostics;
     private readonly string path;
     private readonly UnclosedBlockHint? unclosedBlockHint;
+    private readonly IndentationMismatchHint? indentationMismatchHint;
     private bool emittedUnclosedBlockInfo;
+    private bool emittedIndentationMismatchInfo;
 
-    public LoaderParserErrorListener(DiagnosticBag diagnostics, string path, UnclosedBlockHint? unclosedBlockHint)
+    public LoaderParserErrorListener(DiagnosticBag diagnostics, string path, BlockScanResult blockScanResult)
     {
         this.diagnostics = diagnostics;
         this.path = path;
-        this.unclosedBlockHint = unclosedBlockHint;
+        unclosedBlockHint = blockScanResult.UnclosedBlockHint;
+        indentationMismatchHint = blockScanResult.IndentationMismatchHint;
     }
 
     public override void SyntaxError(
@@ -1305,6 +1384,23 @@ internal sealed class LoaderParserErrorListener : BaseErrorListener
                 Line = hint.Line,
                 Column = hint.Column,
                 Code = DiagnosticCodes.ParseUnclosedBlockInfo,
+                FilePath = path
+            });
+        }
+
+        if (!emittedIndentationMismatchInfo &&
+            indentationMismatchHint is IndentationMismatchHint mismatch &&
+            SyntaxErrorFormatter.IsMissingEndAtEof(offendingSymbol, msg))
+        {
+            emittedIndentationMismatchInfo = true;
+            diagnostics.AddDiagnostic(new Diagnostic
+            {
+                Severity = DiagnosticSeverity.Info,
+                Message =
+                    $"'{mismatch.StatementKeyword}' statement at line {mismatch.StatementLine} appears to match '{mismatch.OpenKeyword}' opened at line {mismatch.OpenLine}, but it is indented differently ({mismatch.StatementIndent} vs {mismatch.OpenIndent}); this usually means a missing 'end'.",
+                Line = mismatch.StatementLine,
+                Column = mismatch.StatementIndent,
+                Code = DiagnosticCodes.ParseIndentationMismatchInfo,
                 FilePath = path
             });
         }

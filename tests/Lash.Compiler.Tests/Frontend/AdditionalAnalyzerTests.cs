@@ -38,7 +38,9 @@ public class AdditionalAnalyzerTests
         new TypeChecker(diagnostics).Analyze(program);
         new ConstantSafetyAnalyzer(diagnostics).Analyze(program);
 
-        Assert.Contains(diagnostics.GetErrors(), e => e.Code == DiagnosticCodes.DivisionOrModuloByZero);
+        Assert.Contains(diagnostics.GetErrors(), e =>
+            e.Code == DiagnosticCodes.DivisionOrModuloByZero &&
+            !e.Message.Contains("Tip:", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -74,7 +76,9 @@ public class AdditionalAnalyzerTests
         new TypeChecker(diagnostics).Analyze(program);
         new CodegenFeasibilityAnalyzer(diagnostics).Analyze(program);
 
-        Assert.Contains(diagnostics.GetErrors(), e => e.Code == DiagnosticCodes.UnsupportedExpressionForCodegen);
+        Assert.Contains(diagnostics.GetErrors(), e =>
+            e.Code == DiagnosticCodes.UnsupportedExpressionForCodegen &&
+            !e.Message.Contains("Tip:", StringComparison.Ordinal));
     }
 
     [Fact]

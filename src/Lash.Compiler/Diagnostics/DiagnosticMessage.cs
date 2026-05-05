@@ -7,6 +7,10 @@ internal static class DiagnosticMessage
         if (string.IsNullOrWhiteSpace(tip))
             return message;
 
-        return $"{message} Tip: {tip}";
+        var trimmed = tip.Trim();
+        if (trimmed.Length == 0)
+            return message;
+
+        return $"{message} Tip: {trimmed}";
     }
 }

@@ -24,7 +24,7 @@ internal sealed class ImportDirective : IPreprocessorDirective
         if (!DirectiveProcessor.TryParseImportArguments(directive.Arguments, out var pathExpression, out var intoVariable, out var intoMode, out var error))
         {
             state.AddError(
-                DiagnosticMessage.WithTip($"Invalid @import directive: {error}", "Expected: @import \"path\" [into name]"),
+                DiagnosticMessage.WithTip($"Invalid @import directive: {error}", "Use '@import \"path\" [into name]'."),
                 DiagnosticCodes.PreprocessorDirectiveSyntax);
             return;
         }

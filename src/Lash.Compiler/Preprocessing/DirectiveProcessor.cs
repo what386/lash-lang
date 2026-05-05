@@ -118,7 +118,7 @@ internal sealed class DirectiveProcessor
             if (!state.TryCloseTopBlock(out var closeError))
             {
                 state.AddError(
-                    DiagnosticMessage.WithTip(closeError, "Check that each @if/@raw has a matching @end."),
+                    closeError,
                     DiagnosticCodes.PreprocessorConditionalStructure);
             }
 
@@ -163,7 +163,7 @@ internal sealed class DirectiveProcessor
         if (!File.Exists(fullPath))
         {
             state.AddError(
-                DiagnosticMessage.WithTip($"@import file not found: {fullPath}", "Check the path relative to the file that contains @import."),
+                DiagnosticMessage.WithTip($"@import file not found: {fullPath}", "Use a path relative to the file that contains @import, or use an absolute path."),
                 DiagnosticCodes.PreprocessorImportIo);
             return;
         }
@@ -176,7 +176,7 @@ internal sealed class DirectiveProcessor
         catch (Exception ex)
         {
             state.AddError(
-                DiagnosticMessage.WithTip($"Failed to read imported file '{fullPath}': {ex.Message}", "Verify file permissions and encoding."),
+                DiagnosticMessage.WithTip($"Failed to read imported file '{fullPath}': {ex.Message}", "Use a readable UTF-8 text file path for @import."),
                 DiagnosticCodes.PreprocessorImportIo);
             return;
         }

@@ -1227,32 +1227,20 @@ public sealed class NameResolver {
     var tip = code switch {
       DiagnosticCodes.InvalidAssignmentTarget =>
           "Use 'var' for mutable variables, or remove this assignment.",
-      DiagnosticCodes.UndeclaredVariable =>
-          "Declare the symbol before first use with 'var', 'let', or 'readonly'.",
-      DiagnosticCodes.UnknownFunction =>
-          "Declare the function before calling it, or fix the function name.",
-      DiagnosticCodes.FunctionArityMismatch =>
-          "Match the call arity to the function signature (required + " +
-          "optional parameters).",
-      DiagnosticCodes.InvalidControlFlowContext =>
-          "Move this statement into a valid context (loop or function).",
-      DiagnosticCodes.InvalidParameterDeclaration =>
-          "Place required parameters before defaulted parameters.",
-      DiagnosticCodes.DuplicateDeclaration =>
-          "Rename the symbol or remove the duplicate declaration in this " +
-          "scope.",
+      DiagnosticCodes.UndeclaredVariable => null,
+      DiagnosticCodes.UnknownFunction => null,
+      DiagnosticCodes.FunctionArityMismatch => null,
+      DiagnosticCodes.InvalidControlFlowContext => null,
+      DiagnosticCodes.InvalidParameterDeclaration => null,
+      DiagnosticCodes.DuplicateDeclaration => null,
       DiagnosticCodes.InvalidCommandUsage =>
           "Use a valid form for this command, or use sh to emit it directly.",
       DiagnosticCodes.InvalidReadonlyContext =>
           "Use 'let' for compile-time immutability in loops, or hoist 'readonly' outside the repeated block.",
-      DiagnosticCodes.DuplicateEnumMember =>
-          "Remove or rename the duplicate enum member.",
-      DiagnosticCodes.EmptyEnumDeclaration =>
-          "Add at least one member to the enum.",
-      DiagnosticCodes.DuplicateSwitchCasePattern =>
-          "Remove or change the duplicate case pattern.",
-      DiagnosticCodes.DuplicateWildcardCase =>
-          "Keep a single wildcard case, typically as the final case.",
+      DiagnosticCodes.DuplicateEnumMember => null,
+      DiagnosticCodes.EmptyEnumDeclaration => null,
+      DiagnosticCodes.DuplicateSwitchCasePattern => null,
+      DiagnosticCodes.DuplicateWildcardCase => null,
       _ => null
     };
 

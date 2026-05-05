@@ -790,10 +790,10 @@ public sealed class TypeChecker
     {
         var tip = code switch
         {
-            DiagnosticCodes.TypeMismatch => "Check operand/value types and convert values before combining them.",
+            DiagnosticCodes.TypeMismatch => null,
             DiagnosticCodes.AmbiguousCompoundAssignment => "Disambiguate '+=' by using clear numeric operands or array append operands.",
-            DiagnosticCodes.InvalidShellPayload => "Use a string literal or interpolated string for shell command payloads.",
-            DiagnosticCodes.InvalidIndexOrContainerUsage => "Use array values for index access and keep key kinds consistent.",
+            DiagnosticCodes.InvalidShellPayload => null,
+            DiagnosticCodes.InvalidIndexOrContainerUsage => null,
             _ => null
         };
 
