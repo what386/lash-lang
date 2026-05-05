@@ -422,7 +422,7 @@ internal sealed class DirectiveProcessor
             }
         }
 
-        if (!IsValidIdentifier(name))
+        if (!LashIdentifier.IsValid(name))
         {
             error = $"invalid symbol name '{name}'";
             return false;
@@ -435,7 +435,7 @@ internal sealed class DirectiveProcessor
     public static bool TryParseSymbolName(string text, out string name, out string error)
     {
         name = text.Trim();
-        if (!IsValidIdentifier(name))
+        if (!LashIdentifier.IsValid(name))
         {
             error = string.IsNullOrWhiteSpace(name)
                 ? "missing symbol name"
@@ -458,30 +458,4 @@ internal sealed class DirectiveProcessor
         return -1;
     }
 
-    private static bool IsValidIdentifier(string value)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            return false;
-
-        if (!IsIdentifierStart(value[0]))
-            return false;
-
-        for (int i = 1; i < value.Length; i++)
-        {
-            if (!IsIdentifierPart(value[i]))
-                return false;
-        }
-
-        return true;
-    }
-
-    private static bool IsIdentifierStart(char c)
-    {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
-    }
-
-    private static bool IsIdentifierPart(char c)
-    {
-        return IsIdentifierStart(c) || (c >= '0' && c <= '9');
-    }
 }

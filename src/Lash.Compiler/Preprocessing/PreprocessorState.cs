@@ -365,12 +365,12 @@ internal sealed class PreprocessorState
             return false;
 
         SkipWhitespace(line, ref cursor);
-        if (cursor >= line.Length || !IsIdentifierStart(line[cursor]))
+        if (cursor >= line.Length || !LashIdentifier.IsStart(line[cursor]))
             return false;
 
         var start = cursor;
         cursor++;
-        while (cursor < line.Length && IsIdentifierPart(line[cursor]))
+        while (cursor < line.Length && LashIdentifier.IsPart(line[cursor]))
             cursor++;
 
         name = line[start..cursor];
@@ -399,15 +399,6 @@ internal sealed class PreprocessorState
             cursor++;
     }
 
-    private static bool IsIdentifierStart(char c)
-    {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
-    }
-
-    private static bool IsIdentifierPart(char c)
-    {
-        return IsIdentifierStart(c) || (c >= '0' && c <= '9');
-    }
 }
 
 internal readonly record struct ConditionalFrame(

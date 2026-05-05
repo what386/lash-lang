@@ -17,7 +17,7 @@ internal sealed partial class ExpressionGenerator
 
         while (cursor < template.Length)
         {
-            var openBrace = FindNextUnescaped(template, '{', cursor);
+            var openBrace = CodeGenInterpolation.FindNextUnescaped(template, '{', cursor);
             if (openBrace < 0)
             {
                 var tail = template[cursor..];
@@ -29,7 +29,7 @@ internal sealed partial class ExpressionGenerator
             builder.Append(UnescapeShellPayloadText(literalSegment));
             UpdateShellQuoteState(literalSegment, ref quoteState);
 
-            var closeBrace = FindNextUnescaped(template, '}', openBrace + 1);
+            var closeBrace = CodeGenInterpolation.FindNextUnescaped(template, '}', openBrace + 1);
             if (closeBrace < 0)
             {
                 var rawRemainder = template[openBrace..];
@@ -38,11 +38,13 @@ internal sealed partial class ExpressionGenerator
             }
 
             var placeholder = template[(openBrace + 1)..closeBrace].Trim();
-            if (TryGetIdentifierPath(placeholder, out var path))
+            if (CodeGenInterpolation.TryGetIdentifierPath(placeholder, out var path))
             {
-                builder.Append(quoteState.InSingleQuote
-                    ? "'\"${" + path + "}\"'"
-                    : "${" + path + "}");
+                if (quoteState.InSingleQuote)
+                    builder.Append("'\"");
+                CodeGenInterpolation.AppendIdentifierExpansion(builder, path);
+                if (quoteState.InSingleQuote)
+                    builder.Append("\"'");
             }
             else
             {
@@ -128,11 +130,11 @@ internal sealed partial class ExpressionGenerator
         consumedLength = 0;
 
         var nameStart = dollarIndex + 1;
-        if (nameStart >= text.Length || !IsIdentifierStart(text[nameStart]))
+        if (nameStart >= text.Length || !LashIdentifier.IsStart(text[nameStart]))
             return false;
 
         var cursor = nameStart + 1;
-        while (cursor < text.Length && IsIdentifierPart(text[cursor]))
+        while (cursor < text.Length && LashIdentifier.IsPart(text[cursor]))
             cursor++;
 
         if (cursor + 2 >= text.Length)

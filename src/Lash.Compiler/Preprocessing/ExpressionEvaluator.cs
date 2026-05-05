@@ -414,11 +414,11 @@ internal sealed class DirectiveExpressionEvaluator
                     continue;
                 }
 
-                if (IsIdentifierStart(c))
+                if (LashIdentifier.IsStart(c))
                 {
                     var start = i;
                     i++;
-                    while (i < source.Length && IsIdentifierPart(source[i]))
+                    while (i < source.Length && LashIdentifier.IsPart(source[i]))
                         i++;
                     tokens.Add(new Token(TokenKind.Identifier, source[start..i]));
                     continue;
@@ -463,15 +463,6 @@ internal sealed class DirectiveExpressionEvaluator
             return true;
         }
 
-        private static bool IsIdentifierStart(char c)
-        {
-            return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
-        }
-
-        private static bool IsIdentifierPart(char c)
-        {
-            return IsIdentifierStart(c) || (c >= '0' && c <= '9');
-        }
     }
 
     private readonly record struct Token(TokenKind Kind, string Text);

@@ -122,7 +122,7 @@ internal sealed partial class ExpressionGenerator
         int cursor = 0;
         while (cursor < template.Length)
         {
-            var openBrace = FindNextUnescaped(template, '{', cursor);
+            var openBrace = CodeGenInterpolation.FindNextUnescaped(template, '{', cursor);
             if (openBrace < 0)
             {
                 builder.Append(EscapeForDoubleQuotes(template[cursor..]));
@@ -131,7 +131,7 @@ internal sealed partial class ExpressionGenerator
 
             builder.Append(EscapeForDoubleQuotes(template[cursor..openBrace]));
 
-            var closeBrace = FindNextUnescaped(template, '}', openBrace + 1);
+            var closeBrace = CodeGenInterpolation.FindNextUnescaped(template, '}', openBrace + 1);
             if (closeBrace < 0)
             {
                 builder.Append(EscapeForDoubleQuotes(template[openBrace..]));
@@ -139,8 +139,8 @@ internal sealed partial class ExpressionGenerator
             }
 
             var placeholder = template[(openBrace + 1)..closeBrace].Trim();
-            if (TryGetIdentifierPath(placeholder, out var path))
-                builder.Append("${" + path + "}");
+            if (CodeGenInterpolation.TryGetIdentifierPath(placeholder, out var path))
+                CodeGenInterpolation.AppendIdentifierExpansion(builder, path);
             else
                 builder.Append(EscapeForDoubleQuotes(template[openBrace..(closeBrace + 1)]));
 

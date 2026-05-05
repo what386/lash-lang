@@ -365,7 +365,7 @@ internal sealed partial class StatementGenerator
         int cursor = 0;
         while (cursor < template.Length)
         {
-            var openBrace = FindNextUnescaped(template, '{', cursor);
+            var openBrace = CodeGenInterpolation.FindNextUnescaped(template, '{', cursor);
             if (openBrace < 0)
             {
                 builder.Append(template[cursor..]);
@@ -373,7 +373,7 @@ internal sealed partial class StatementGenerator
             }
 
             builder.Append(template[cursor..openBrace]);
-            var closeBrace = FindNextUnescaped(template, '}', openBrace + 1);
+            var closeBrace = CodeGenInterpolation.FindNextUnescaped(template, '}', openBrace + 1);
             if (closeBrace < 0)
             {
                 builder.Append(template[openBrace..]);
@@ -381,11 +381,9 @@ internal sealed partial class StatementGenerator
             }
 
             var placeholder = template[(openBrace + 1)..closeBrace].Trim();
-            if (TryGetIdentifierPath(placeholder, out var path))
+            if (CodeGenInterpolation.TryGetIdentifierPath(placeholder, out var path))
             {
-                builder.Append("${");
-                builder.Append(path);
-                builder.Append('}');
+                CodeGenInterpolation.AppendIdentifierExpansion(builder, path);
             }
             else
             {
@@ -396,65 +394,6 @@ internal sealed partial class StatementGenerator
         }
 
         return builder.ToString();
-    }
-
-    private static int FindNextUnescaped(string text, char needle, int start)
-    {
-        for (int i = start; i < text.Length; i++)
-        {
-            if (text[i] == needle && (i == 0 || text[i - 1] != '\\'))
-                return i;
-        }
-
-        return -1;
-    }
-
-    private static bool TryGetIdentifierPath(string input, out string path)
-    {
-        path = string.Empty;
-        if (string.IsNullOrWhiteSpace(input))
-            return false;
-
-        var parts = input.Split(
-            '.',
-            StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        if (parts.Length == 0)
-            return false;
-
-        foreach (var part in parts)
-        {
-            if (!IsIdentifier(part))
-                return false;
-        }
-
-        path = string.Join("_", parts);
-        return true;
-    }
-
-    private static bool IsIdentifier(string value)
-    {
-        if (string.IsNullOrEmpty(value))
-            return false;
-        if (!IsIdentifierStart(value[0]))
-            return false;
-
-        for (int i = 1; i < value.Length; i++)
-        {
-            if (!IsIdentifierPart(value[i]))
-                return false;
-        }
-
-        return true;
-    }
-
-    private static bool IsIdentifierStart(char c)
-    {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
-    }
-
-    private static bool IsIdentifierPart(char c)
-    {
-        return IsIdentifierStart(c) || (c >= '0' && c <= '9');
     }
 
     private static bool IsFdDupOperator(string op)

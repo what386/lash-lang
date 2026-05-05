@@ -4,6 +4,10 @@ using System.Text.RegularExpressions;
 using Antlr4.Runtime;
 
 internal static class SyntaxErrorFormatter {
+  private const string EndOfFileToken = "<EOF>";
+  private const string UnknownToken = "<unknown>";
+  private const string ExpectedTokensMarker = "expecting ";
+
   public static string FormatParserError(IToken? offendingSymbol,
                                          string rawMessage) {
     return FormatParserError(offendingSymbol, rawMessage, null);
@@ -13,7 +17,7 @@ internal static class SyntaxErrorFormatter {
                                          string rawMessage,
                                          UnclosedBlockHint? unclosedBlockHint) {
     var offendingText = NormalizeToken(offendingSymbol?.Text);
-    if (string.Equals(offendingText, "<EOF>", StringComparison.Ordinal))
+    if (string.Equals(offendingText, EndOfFileToken, StringComparison.Ordinal))
       return FormatUnexpectedEndOfFile(rawMessage, unclosedBlockHint);
 
     if (string.Equals(offendingText, "<<<", StringComparison.Ordinal))
@@ -52,7 +56,7 @@ internal static class SyntaxErrorFormatter {
   private static bool IsPreprocessorLike(string? text) {
     if (string.IsNullOrWhiteSpace(text))
       return false;
-    if (string.Equals(text, "<EOF>", StringComparison.Ordinal))
+    if (string.Equals(text, EndOfFileToken, StringComparison.Ordinal))
       return false;
 
     return text.StartsWith("#", StringComparison.Ordinal);
@@ -60,7 +64,7 @@ internal static class SyntaxErrorFormatter {
 
   private static string NormalizeToken(string? tokenText) {
     if (string.IsNullOrWhiteSpace(tokenText))
-      return "<unknown>";
+      return UnknownToken;
 
     return tokenText.Replace("\r", "\\r", StringComparison.Ordinal)
         .Replace("\n", "\\n", StringComparison.Ordinal);
@@ -68,7 +72,7 @@ internal static class SyntaxErrorFormatter {
 
   public static bool IsMissingEndAtEof(IToken? offendingSymbol,
                                        string rawMessage) {
-    if (!string.Equals(NormalizeToken(offendingSymbol?.Text), "<EOF>",
+    if (!string.Equals(NormalizeToken(offendingSymbol?.Text), EndOfFileToken,
                        StringComparison.Ordinal))
       return false;
 
@@ -96,12 +100,11 @@ internal static class SyntaxErrorFormatter {
   }
 
   private static string? ExtractExpectedTokens(string rawMessage) {
-    var marker = "expecting ";
-    var index = rawMessage.IndexOf(marker, StringComparison.Ordinal);
+    var index = rawMessage.IndexOf(ExpectedTokensMarker, StringComparison.Ordinal);
     if (index < 0)
       return null;
 
-    var expected = rawMessage[(index + marker.Length)..].Trim();
+    var expected = rawMessage[(index + ExpectedTokensMarker.Length)..].Trim();
     if (expected.Length == 0)
       return null;
 
