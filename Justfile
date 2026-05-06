@@ -14,3 +14,21 @@ test:
 
 run *args:
     dotnet run -- {{args}}
+
+build-debug:
+    scripts/build.lash linux-x64 --no-trim --no-single-file --no-ready2run
+
+build-all-release:
+    scripts/build.lash linux-x64 linux-arm64 win-x64 win-arm64 osx-x64 osx-arm64 --no-trim lashlsp
+
+build-all-release-runtime:
+    scripts/build.lash linux-x64 linux-arm64 win-x64 win-arm64 osx-x64 osx-arm64 --no-trim lashlsp --no-self-contained
+
+pack-binaries *args:
+    scripts/pack.lash {{args}}
+
+gen-package:
+    just build-all-release-runtime
+    just pack-binaries --suffix -runtime
+    just build-all-release
+    just pack-binaries --suffix -self-contained
