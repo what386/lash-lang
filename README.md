@@ -63,6 +63,13 @@ lash format .
 lash format . --check
 ```
 
+Watch Lash files and recompile on changes:
+
+```bash
+lash watch script.lash
+lash watch src/
+```
+
 ## CLI Commands
 
 From `lash --help`:
@@ -71,5 +78,6 @@ From `lash --help`:
 - `check <file>`: validate a `.lash` file without emission
 - `format <paths>...`: format files/directories (`--check` supported)
 - `run <file> [args...]`: compile to temp Bash and execute
+- `watch <paths>...`: watch `.lash` files/directories and recompile changed files
 
 Use `--verbose` on commands for extra phase and progress logs.

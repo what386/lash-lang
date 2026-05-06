@@ -242,3 +242,10 @@ Compile to Bash:
 lash compile script.lash -o script.sh
 bash script.sh
 ```
+
+Watch Lash files and recompile changed files:
+
+```bash
+lash watch script.lash
+lash watch src/
+```
