@@ -5,6 +5,17 @@ set -euo pipefail
 let INPUT_ROOT = "./build"
 let OUTPUT_DIR = "./dist"
 let MAX_PARALLEL = 4
+var ARCHIVE_SUFFIX = ""
+
+fn show_help()
+    echo [[
+    Usage: pack.lash [OPTIONS]
+
+    Options:
+    --suffix <value>  Append a suffix to archive names (e.g. -runtime)
+    -h, --help        Show this help message
+    ]]
+end
 
 fn wait_for_batch(pending)
     for job in pending
@@ -22,13 +33,34 @@ fn wait_for_batch(pending)
     end
 end
 
+while #argv > 0
+    let arg = argv[0]
+
+    if arg == "-h" || arg == "--help"
+        show_help()
+        exit 0
+    elif arg == "--suffix"
+        if #argv < 2
+            echo "Error: --suffix requires a value"
+            exit 1
+        end
+        ARCHIVE_SUFFIX = argv[1]
+        shift
+        shift
+    else
+        echo "Error: Unknown argument:" arg
+        show_help()
+        exit 1
+    end
+end
+
 mkdir -p "$OUTPUT_DIR"
 cd "$INPUT_ROOT"
 
 var packed = 0
 var active_jobs = []
 for dir in ./*
-    let archive = "../dist/" + dir + ".tar.gz"
+    let archive = "../dist/" + dir + ARCHIVE_SUFFIX + ".tar.gz"
 
     subshell into pack_pid
         echo "Packing:" $dir "->" $archive
