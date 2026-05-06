@@ -1,9 +1,12 @@
 # TODO — lash-lang v0.15.0
 
 @created: 2026-02-24
-@modified: 2026-04-07
+@modified: 2026-05-06
 
 ## Tasks
+
+- [ ] cli: Add 'watch' command to cli
+      @created 2026-05-06 22:04
 
 
 ## Completed
