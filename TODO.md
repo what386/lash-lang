@@ -1,4 +1,4 @@
-# TODO — lash-lang v0.15.0
+# TODO — lash-lang v0.16.0
 
 @created: 2026-02-24
 @modified: 2026-05-06
@@ -76,12 +76,15 @@
 - [x] Serialize per-RID tool publishing in build script to avoid project-output races (high) #bug #build #scripts
       @created 2026-04-07 22:30
       @completed 2026-04-07 22:34
+      @completed_version 0.16.0
 
 - [x] cli: Add 'watch' command to cli
       @created 2026-05-06 22:04
       @completed 2026-05-06 22:04
+      @completed_version 0.16.0
 
 - [x] compiler: rename/update warnings to be clearer
       @created 2026-05-06 22:04
       @completed 2026-05-06 22:04
+      @completed_version 0.16.0
 
