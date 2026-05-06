@@ -25,6 +25,7 @@ var ENABLE_TRIMMING = true
 var NO_TRIM_TOOLS = []
 var ENABLE_SINGLE_FILE = true
 var ENABLE_READY_TO_RUN = true
+var ENABLE_SELF_CONTAINED = true
 
 fn show_help()
     echo [[
@@ -34,6 +35,7 @@ fn show_help()
     --no-trim [tool]   Disable trimming globally or for one tool
     --no-single-file   Publish as multiple files (faster builds, easier debugging)
     --no-ready2run     Disable ReadyToRun compilation (faster builds, slower startup)
+    --no-self-contained Build as framework-dependent (requires installed runtime)
     -h, --help         Show this help message
 
     Arguments:
@@ -49,6 +51,7 @@ fn show_help()
     build.lash --no-trim win-x64                    # Build Windows 64-bit without trimming
     build.lash --no-trim lashlsp linux-x64          # Disable trimming only for lashlsp
     build.lash --no-single-file --no-trim win-x64   # Fast dev build
+    build.lash --no-self-contained linux-x64        # Framework-dependent Linux build
     build.lash win-x64 linux-x64                    # Build Windows and Linux 64-bit
     build.lash osx-x64 osx-arm64                    # Build both macOS versions
     ]]
@@ -186,11 +189,14 @@ fn build_tool_for_platform(tool_name, project_path, rid, bundle_dir)
         CONFIGURATION,
         "-r",
         rid,
-        "--self-contained",
         "-p:UseAppHost=true",
         "-o",
         temp_dir
     ]
+
+    if ENABLE_SELF_CONTAINED
+        publish_args += ["--self-contained"]
+    end
 
     if ENABLE_SINGLE_FILE
         publish_args += ["-p:PublishSingleFile=True"]
@@ -319,6 +325,9 @@ while #argv > 0
     elif arg == "--no-ready2run"
         ENABLE_READY_TO_RUN = false
         shift
+    elif arg == "--no-self-contained"
+        ENABLE_SELF_CONTAINED = false
+        shift
     else
         BUILD_PLATFORMS += [arg]
         shift
@@ -353,6 +362,11 @@ if ENABLE_READY_TO_RUN
     echo -e "  ReadyToRun:   ${GREEN}Enabled${NC}"
 else
     echo -e "  ReadyToRun:   ${YELLOW}Disabled${NC}"
+end
+if ENABLE_SELF_CONTAINED
+    echo -e "  Self-contained: ${GREEN}Enabled${NC}"
+else
+    echo -e "  Self-contained: ${YELLOW}Disabled${NC}"
 end
 
 if dir_exists(OUTPUT_DIR)
