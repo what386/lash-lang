@@ -1,6 +1,7 @@
 namespace Lash.Cli.Commands;
 
 using System.CommandLine;
+using Lash.Cli.Services;
 
 static class CheckCommand
 {
@@ -35,7 +36,9 @@ static class CheckCommand
         {
             var file = parseResult.GetValue(fileArgument);
             var verbose = parseResult.GetValue(SharedOptions.Verbose);
-            return CompilePipeline.Check(file!, verbose);
+            var processRunner = new ProcessRunnerService();
+            var compiler = new CompilerService(processRunner);
+            return compiler.Check(file!, verbose);
         });
 
         return command;

@@ -1,6 +1,7 @@
 namespace Lash.Cli.Commands;
 
 using System.CommandLine;
+using Lash.Cli.Services;
 
 static class FormatCommand
 {
@@ -30,7 +31,9 @@ static class FormatCommand
             var paths = parseResult.GetValue(fileArgument) ?? Array.Empty<string>();
             var check = parseResult.GetValue(checkOption);
             var verbose = parseResult.GetValue(SharedOptions.Verbose);
-            return CompilePipeline.Format(paths, check, verbose);
+            var processRunner = new ProcessRunnerService();
+            var compiler = new CompilerService(processRunner);
+            return compiler.Format(paths, check, verbose);
         });
 
         return command;

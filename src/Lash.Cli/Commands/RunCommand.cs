@@ -1,6 +1,7 @@
 namespace Lash.Cli.Commands;
 
 using System.CommandLine;
+using Lash.Cli.Services;
 
 static class RunCommand
 {
@@ -51,7 +52,10 @@ static class RunCommand
             var keepTemp = parseResult.GetValue(keepTempOption);
             var args = parseResult.GetValue(argsArgument) ?? Array.Empty<string>();
             var verbose = parseResult.GetValue(SharedOptions.Verbose);
-            return CompilePipeline.Run(file, keepTemp, args, verbose);
+            var processRunner = new ProcessRunnerService();
+            var compiler = new CompilerService(processRunner);
+            var runService = new RunService(compiler, processRunner);
+            return runService.Run(file, keepTemp, args, verbose);
         });
 
         return command;

@@ -1,6 +1,7 @@
 namespace Lash.Cli.Commands;
 
 using System.CommandLine;
+using Lash.Cli.Services;
 
 
 static class CompileCommand
@@ -47,7 +48,9 @@ static class CompileCommand
                 Path.GetDirectoryName(file) ?? ".",
                 $"{Path.GetFileNameWithoutExtension(file)}.sh");
 
-            return CompilePipeline.Compile(file, output, verbose);
+            var processRunner = new ProcessRunnerService();
+            var compiler = new CompilerService(processRunner);
+            return compiler.Compile(file, output, verbose);
         });
 
         return command;
