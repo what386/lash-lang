@@ -9,61 +9,9 @@ readonly PROJECT_NAME="Lash"
 readonly CONFIGURATION="Release"
 readonly OUTPUT_DIR="./build"
 readonly PROJECTS=("lash:./src/Lash.Cli/Lash.Cli.csproj" "lashc:./src/Lash.Compiler/Lash.Compiler.csproj" "lashfmt:./src/Lash.Formatter/Lash.Formatter.csproj" "lashlsp:./src/Lash.Lsp/Lash.Lsp.csproj")
-ENABLE_TRIMMING=1
-NO_TRIM_TOOLS=()
-ENABLE_SINGLE_FILE=1
-ENABLE_READY_TO_RUN=1
+ENABLE_SELF_CONTAINED=1
 show_help() {
-    echo $'\n    Usage: build.lash [OPTIONS] <platform1> [platform2] ...\n\n    Options:\n    --no-trim [tool]   Disable trimming globally or for one tool\n    --no-single-file   Publish as multiple files (faster builds, easier debugging)\n    --no-ready2run     Disable ReadyToRun compilation (faster builds, slower startup)\n    -h, --help         Show this help message\n\n    Arguments:\n    <platforms>  Space-separated list of platforms to build\n\n    Available platforms:\n    win-x64, win-x86, win-arm64\n    linux-x64, linux-arm64, linux-arm\n    osx-x64, osx-arm64\n\n    Examples:\n    build.lash win-x64                              # Build only Windows 64-bit\n    build.lash --no-trim win-x64                    # Build Windows 64-bit without trimming\n    build.lash --no-trim lashlsp linux-x64          # Disable trimming only for lashlsp\n    build.lash --no-single-file --no-trim win-x64   # Fast dev build\n    build.lash win-x64 linux-x64                    # Build Windows and Linux 64-bit\n    build.lash osx-x64 osx-arm64                    # Build both macOS versions\n    '
-}
-is_known_tool() {
-    local tool_name="$1"
-
-    for entry in "${PROJECTS[@]}"; do
-        local known=$(printf '%s' $entry | cut -d: -f1)
-        if [[ ${known} == ${tool_name} ]]; then
-            echo 1
-            return 0
-        fi
-    done
-    echo 0
-    return 0
-}
-list_to_csv() {
-    local -a values=("${@:1}")
-
-    if [[ ${#values[@]} == 0 ]]; then
-        echo ""
-        return 0
-    fi
-    local result=""
-    local is_first=1
-    for value in "${values[@]}"; do
-        if (( is_first != 0 )); then
-            result=${value}
-            is_first=0
-        else
-            result="${result},${value}"
-        fi
-    done
-    echo ${result}
-    return 0
-}
-should_trim_tool() {
-    local tool_name="$1"
-
-    if ! (( ENABLE_TRIMMING != 0 )); then
-        echo 0
-        return 0
-    fi
-    for disabled in "${NO_TRIM_TOOLS[@]}"; do
-        if [[ ${disabled} == ${tool_name} ]]; then
-            echo 0
-            return 0
-        fi
-    done
-    echo 1
-    return 0
+    echo $'\n    Usage: build.lash [OPTIONS] <platform1> [platform2] ...\n\n    Options:\n    --no-self-contained  Build as framework-dependent (requires installed runtime)\n    -h, --help         Show this help message\n\n    Arguments:\n    <platforms>  Space-separated list of platforms to build\n\n    Available platforms:\n    win-x64, win-x86, win-arm64\n    linux-x64, linux-arm64, linux-arm\n    osx-x64, osx-arm64\n\n    Examples:\n    build.lash win-x64                        # Build only Windows 64-bit\n    build.lash --no-self-contained linux-x64  # Framework-dependent Linux build\n    build.lash win-x64 linux-x64              # Build Windows and Linux 64-bit\n    build.lash osx-x64 osx-arm64              # Build both macOS versions\n    '
 }
 is_windows_rid() {
     local rid="$1"
@@ -172,20 +120,9 @@ build_tool_for_platform() {
     local bundle_dir="$4"
 
     local temp_dir="${OUTPUT_DIR}/temp_${tool_name}_${rid}"
-    local publish_args=(${project_path} "-c" ${CONFIGURATION} "-r" ${rid} "--self-contained" "-p:UseAppHost=true" "-o" ${temp_dir})
-    if (( ENABLE_SINGLE_FILE != 0 )); then
-        publish_args+=("-p:PublishSingleFile=True")
-    fi
-    if (( ENABLE_READY_TO_RUN != 0 )); then
-        publish_args+=("-p:PublishReadyToRun=True")
-    fi
-    if ! [ $(should_trim_tool "${tool_name}") -ne 0 ]; then
-        if (( ENABLE_TRIMMING != 0 )); then
-            echo -e "${YELLOW}! Skipping trimming for ${tool_name}${NC}"
-        fi
-    fi
-    if [ $(should_trim_tool "${tool_name}") -ne 0 ]; then
-        publish_args+=("-p:PublishTrimmed=True" "-p:TrimMode=CopyUsed" "-p:EnableTrimAnalyzer=True" "-warnaserror:IL2*")
+    local publish_args=(${project_path} "-c" ${CONFIGURATION} "-r" ${rid} "-o" ${temp_dir})
+    if (( ENABLE_SELF_CONTAINED != 0 )); then
+        publish_args+=("--self-contained")
     fi
     dotnet publish "${publish_args[@]}"
     local project_stem=$(basename "$project_path" .csproj)
@@ -279,32 +216,8 @@ while (( $# > 0 )); do
     if [[ ${arg} == "-h" ]] || [[ ${arg} == "--help" ]]; then
         show_help
         exit 0
-    elif [[ ${arg} == "--no-trim" ]]; then
-        if (( $# > 1 )) && [ $(is_known_tool "${@:2:1}") -ne 0 ]; then
-            NO_TRIM_TOOLS+=(${@:2:1})
-            __lash_shift_n=$(( 1 ))
-            if (( __lash_shift_n > 0 )); then
-            if (( __lash_shift_n >= $# )); then set --; else shift "${__lash_shift_n}"; fi
-            fi
-            __lash_shift_n=$(( 1 ))
-            if (( __lash_shift_n > 0 )); then
-            if (( __lash_shift_n >= $# )); then set --; else shift "${__lash_shift_n}"; fi
-            fi
-        else
-            ENABLE_TRIMMING=0
-            __lash_shift_n=$(( 1 ))
-            if (( __lash_shift_n > 0 )); then
-            if (( __lash_shift_n >= $# )); then set --; else shift "${__lash_shift_n}"; fi
-            fi
-        fi
-    elif [[ ${arg} == "--no-single-file" ]]; then
-        ENABLE_SINGLE_FILE=0
-        __lash_shift_n=$(( 1 ))
-        if (( __lash_shift_n > 0 )); then
-        if (( __lash_shift_n >= $# )); then set --; else shift "${__lash_shift_n}"; fi
-        fi
-    elif [[ ${arg} == "--no-ready2run" ]]; then
-        ENABLE_READY_TO_RUN=0
+    elif [[ ${arg} == "--no-self-contained" ]]; then
+        ENABLE_SELF_CONTAINED=0
         __lash_shift_n=$(( 1 ))
         if (( __lash_shift_n > 0 )); then
         if (( __lash_shift_n >= $# )); then set --; else shift "${__lash_shift_n}"; fi
@@ -325,25 +238,10 @@ if [[ ${#BUILD_PLATFORMS[@]} == 0 ]]; then
 fi
 echo -e "${GREEN}  Building ${PROJECT_NAME}${NC}"
 echo -e "${BLUE}Configuration:${NC}"
-if (( ENABLE_TRIMMING != 0 )); then
-    if [[ ${#NO_TRIM_TOOLS[@]} == 0 ]]; then
-        echo -e "  Trimming:     ${GREEN}Enabled${NC}"
-    else
-        disabled=$(list_to_csv "${NO_TRIM_TOOLS[@]}")
-        echo -e "  Trimming:     ${YELLOW}Enabled (except: ${disabled})${NC}"
-    fi
+if (( ENABLE_SELF_CONTAINED != 0 )); then
+    echo -e "  Self-contained: ${GREEN}Enabled${NC}"
 else
-    echo -e "  Trimming:     ${YELLOW}Disabled${NC}"
-fi
-if (( ENABLE_SINGLE_FILE != 0 )); then
-    echo -e "  Single File:  ${GREEN}Enabled${NC}"
-else
-    echo -e "  Single File:  ${YELLOW}Disabled${NC}"
-fi
-if (( ENABLE_READY_TO_RUN != 0 )); then
-    echo -e "  ReadyToRun:   ${GREEN}Enabled${NC}"
-else
-    echo -e "  ReadyToRun:   ${YELLOW}Disabled${NC}"
+    echo -e "  Self-contained: ${YELLOW}Disabled${NC}"
 fi
 if [ $(dir_exists "${OUTPUT_DIR}") -ne 0 ]; then
     echo -e "${YELLOW}Cleaning output directory...${NC}"

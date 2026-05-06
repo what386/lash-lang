@@ -21,10 +21,6 @@ readonly PROJECTS = [
 ]
 
 // Build defaults
-var ENABLE_TRIMMING = true
-var NO_TRIM_TOOLS = []
-var ENABLE_SINGLE_FILE = true
-var ENABLE_READY_TO_RUN = true
 var ENABLE_SELF_CONTAINED = true
 
 fn show_help()
@@ -32,10 +28,7 @@ fn show_help()
     Usage: build.lash [OPTIONS] <platform1> [platform2] ...
 
     Options:
-    --no-trim [tool]   Disable trimming globally or for one tool
-    --no-single-file   Publish as multiple files (faster builds, easier debugging)
-    --no-ready2run     Disable ReadyToRun compilation (faster builds, slower startup)
-    --no-self-contained Build as framework-dependent (requires installed runtime)
+    --no-self-contained  Build as framework-dependent (requires installed runtime)
     -h, --help         Show this help message
 
     Arguments:
@@ -47,57 +40,11 @@ fn show_help()
     osx-x64, osx-arm64
 
     Examples:
-    build.lash win-x64                              # Build only Windows 64-bit
-    build.lash --no-trim win-x64                    # Build Windows 64-bit without trimming
-    build.lash --no-trim lashlsp linux-x64          # Disable trimming only for lashlsp
-    build.lash --no-single-file --no-trim win-x64   # Fast dev build
-    build.lash --no-self-contained linux-x64        # Framework-dependent Linux build
-    build.lash win-x64 linux-x64                    # Build Windows and Linux 64-bit
-    build.lash osx-x64 osx-arm64                    # Build both macOS versions
+    build.lash win-x64                        # Build only Windows 64-bit
+    build.lash --no-self-contained linux-x64  # Framework-dependent Linux build
+    build.lash win-x64 linux-x64              # Build Windows and Linux 64-bit
+    build.lash osx-x64 osx-arm64              # Build both macOS versions
     ]]
-end
-
-fn is_known_tool(tool_name)
-    for entry in PROJECTS
-        let known = $(printf '%s' $entry | cut -d: -f1)
-        if known == tool_name
-            return true
-        end
-    end
-    return false
-end
-
-fn list_to_csv(values)
-    if #values == 0
-        return ""
-    end
-
-    var result = ""
-    var is_first = true
-    for value in values
-        if is_first
-            result = value
-            is_first = false
-        else
-            result = $"{result},{value}"
-        end
-    end
-
-    return result
-end
-
-fn should_trim_tool(tool_name)
-    if !ENABLE_TRIMMING
-        return false
-    end
-
-    for disabled in NO_TRIM_TOOLS
-        if disabled == tool_name
-            return false
-        end
-    end
-
-    return true
 end
 
 fn is_windows_rid(rid)
@@ -189,36 +136,12 @@ fn build_tool_for_platform(tool_name, project_path, rid, bundle_dir)
         CONFIGURATION,
         "-r",
         rid,
-        "-p:UseAppHost=true",
         "-o",
         temp_dir
     ]
 
     if ENABLE_SELF_CONTAINED
         publish_args += ["--self-contained"]
-    end
-
-    if ENABLE_SINGLE_FILE
-        publish_args += ["-p:PublishSingleFile=True"]
-    end
-
-    if ENABLE_READY_TO_RUN
-        publish_args += ["-p:PublishReadyToRun=True"]
-    end
-
-    if !should_trim_tool(tool_name)
-        if ENABLE_TRIMMING
-            echo -e "${YELLOW}! Skipping trimming for ${tool_name}${NC}"
-        end
-    end
-
-    if should_trim_tool(tool_name)
-        publish_args += [
-            "-p:PublishTrimmed=True",
-            "-p:TrimMode=CopyUsed",
-            "-p:EnableTrimAnalyzer=True",
-            "-warnaserror:IL2*"
-        ]
     end
 
     dotnet publish "${publish_args[@]}"
@@ -310,21 +233,6 @@ while #argv > 0
     if arg == "-h" || arg == "--help"
         show_help()
         exit 0
-    elif arg == "--no-trim"
-        if #argv > 1 && is_known_tool(argv[1])
-            NO_TRIM_TOOLS += [argv[1]]
-            shift
-            shift
-        else
-            ENABLE_TRIMMING = false
-            shift
-        end
-    elif arg == "--no-single-file"
-        ENABLE_SINGLE_FILE = false
-        shift
-    elif arg == "--no-ready2run"
-        ENABLE_READY_TO_RUN = false
-        shift
     elif arg == "--no-self-contained"
         ENABLE_SELF_CONTAINED = false
         shift
@@ -343,26 +251,6 @@ end
 
 echo -e "${GREEN}  Building ${PROJECT_NAME}${NC}"
 echo -e "${BLUE}Configuration:${NC}"
-if ENABLE_TRIMMING
-    if #NO_TRIM_TOOLS == 0
-        echo -e "  Trimming:     ${GREEN}Enabled${NC}"
-    else
-        let disabled = list_to_csv(NO_TRIM_TOOLS)
-        echo -e "  Trimming:     ${YELLOW}Enabled (except: ${disabled})${NC}"
-    end
-else
-    echo -e "  Trimming:     ${YELLOW}Disabled${NC}"
-end
-if ENABLE_SINGLE_FILE
-    echo -e "  Single File:  ${GREEN}Enabled${NC}"
-else
-    echo -e "  Single File:  ${YELLOW}Disabled${NC}"
-end
-if ENABLE_READY_TO_RUN
-    echo -e "  ReadyToRun:   ${GREEN}Enabled${NC}"
-else
-    echo -e "  ReadyToRun:   ${YELLOW}Disabled${NC}"
-end
 if ENABLE_SELF_CONTAINED
     echo -e "  Self-contained: ${GREEN}Enabled${NC}"
 else
