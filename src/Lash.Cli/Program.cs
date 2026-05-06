@@ -26,5 +26,6 @@ internal static class Program
         root.Subcommands.Add(CheckCommand.Create());
         root.Subcommands.Add(FormatCommand.Create());
         root.Subcommands.Add(RunCommand.Create());
+        root.Subcommands.Add(WatchCommand.Create());
     }
 }
