@@ -5,9 +5,6 @@
 
 ## Tasks
 
-- [ ] compiler: rename/update warnings to be clearer
-      @created 2026-05-06 22:04
-
 
 ## Completed
 
@@ -81,6 +78,10 @@
       @completed 2026-04-07 22:34
 
 - [x] cli: Add 'watch' command to cli
+      @created 2026-05-06 22:04
+      @completed 2026-05-06 22:04
+
+- [x] compiler: rename/update warnings to be clearer
       @created 2026-05-06 22:04
       @completed 2026-05-06 22:04
 

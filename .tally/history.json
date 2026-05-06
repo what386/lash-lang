@@ -752,5 +752,15 @@
       "completed_at": "2026-05-06T22:04:27.598013052Z"
     },
     "version": null
+  },
+  {
+    "change": {
+      "description": "compiler: rename/update warnings to be clearer",
+      "priority": "Medium",
+      "tags": [],
+      "commit": null,
+      "completed_at": "2026-05-06T22:04:30.634869654Z"
+    },
+    "version": null
   }
 ]
