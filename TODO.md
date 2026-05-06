@@ -8,6 +8,9 @@
 - [ ] cli: Add 'watch' command to cli
       @created 2026-05-06 22:04
 
+- [ ] compiler: rename/update warnings to be clearer
+      @created 2026-05-06 22:04
+
 
 ## Completed
 
