@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_ROOT="/home/bmorin/dev/lash-lang"
+REPO_ROOT="/home/bmorin/dev/programming/lash-lang"
 
 SOURCE_DIR="${REPO_ROOT}/tree-sitter"
 TARGET_DIR="${HOME}/.config/nvim/treesitter/lash"
