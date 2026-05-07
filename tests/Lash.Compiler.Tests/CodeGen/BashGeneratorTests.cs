@@ -583,9 +583,25 @@ public class BashGeneratorTests
             """);
 
         var bash = new BashGenerator().Generate(program);
-        Assert.Contains("select choice in (\"a\" \"b\"); do", bash);
+        Assert.Contains("select choice in \"a\" \"b\"; do", bash);
+        Assert.DoesNotContain("select choice in (", bash);
         Assert.Contains("break", bash);
         Assert.Contains("done", bash);
+    }
+
+    [Fact]
+    public void BashGenerator_EmitsArrayLiteralForLoopIterableAsWordList()
+    {
+        var program = TestCompiler.ParseOrThrow(
+            """
+            for item in ["a", "b"]
+                echo item
+            end
+            """);
+
+        var bash = new BashGenerator().Generate(program);
+        Assert.Contains("for item in \"a\" \"b\"; do", bash);
+        Assert.DoesNotContain("for item in (", bash);
     }
 
     [Fact]

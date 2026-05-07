@@ -83,11 +83,7 @@ internal sealed partial class StatementGenerator
             if (forLoop.Range is null)
                 throw new InvalidOperationException("Non-glob for-loop is missing its iterable expression.");
 
-            rangeExpr = forLoop.Range is IdentifierExpression ident
-                ? string.Equals(ident.Name, "argv", StringComparison.Ordinal)
-                    ? "\"$@\""
-                    : $"\"${{{ident.Name}[@]}}\""
-                : owner.GenerateExpression(forLoop.Range);
+            rangeExpr = GenerateIterableWordsExpression(forLoop.Range);
         }
 
         owner.Emit($"for {forLoop.Variable} in {rangeExpr}; do");
@@ -102,6 +98,18 @@ internal sealed partial class StatementGenerator
         owner.IndentLevel--;
         owner.EmitLine();
         owner.Emit("done");
+    }
+
+    private string GenerateIterableWordsExpression(Expression iterable)
+    {
+        return iterable switch
+        {
+            IdentifierExpression ident => string.Equals(ident.Name, "argv", StringComparison.Ordinal)
+                ? "\"$@\""
+                : $"\"${{{ident.Name}[@]}}\"",
+            ArrayLiteral array => string.Join(" ", array.Elements.Select(owner.GenerateExpression)),
+            _ => owner.GenerateExpression(iterable)
+        };
     }
 
     private void GenerateSelectLoop(SelectLoop selectLoop)
@@ -120,10 +128,7 @@ internal sealed partial class StatementGenerator
             {
                 RangeExpression range =>
                     $"$(seq {owner.GenerateExpression(range.Start)} {owner.GenerateExpression(range.End)})",
-                IdentifierExpression ident => string.Equals(ident.Name, "argv", StringComparison.Ordinal)
-                    ? "\"$@\""
-                    : $"\"${{{ident.Name}[@]}}\"",
-                _ => owner.GenerateExpression(selectLoop.Options)
+                _ => GenerateIterableWordsExpression(selectLoop.Options)
             };
         }
 

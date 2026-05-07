@@ -106,7 +106,7 @@ public sealed class TypeChecker
                 break;
             case ForLoop forLoop:
                 PushScope();
-                Declare(forLoop.Variable, forLoop.GlobPattern != null ? ExpressionTypes.String : ExpressionTypes.Number);
+                Declare(forLoop.Variable, InferForLoopVariableType(forLoop));
                 if (forLoop.Range != null)
                     InferType(forLoop.Range);
                 if (forLoop.Step != null)
@@ -240,6 +240,17 @@ public sealed class TypeChecker
                 InferType(expressionStatement.Expression);
                 break;
         }
+    }
+
+    private ExpressionType InferForLoopVariableType(ForLoop forLoop)
+    {
+        if (forLoop.GlobPattern != null)
+            return ExpressionTypes.String;
+
+        if (forLoop.Range is RangeExpression)
+            return ExpressionTypes.Number;
+
+        return ExpressionTypes.String;
     }
 
     private static bool IsComparisonRedirect(BinaryExpression binaryExpression)

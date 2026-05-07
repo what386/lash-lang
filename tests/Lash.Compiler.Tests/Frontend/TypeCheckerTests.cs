@@ -261,4 +261,40 @@ public class TypeCheckerTests
 
         Assert.Single(errors);
     }
+
+    [Fact]
+    public void TypeChecker_TreatsRangeForLoopVariableAsNumber()
+    {
+        var program = TestCompiler.ParseOrThrow(
+            """
+            for i in 1..3
+                let next = i + 1
+            end
+            """);
+
+        var diagnostics = new DiagnosticBag();
+        new TypeChecker(diagnostics).Analyze(program);
+
+        Assert.DoesNotContain(diagnostics.GetErrors(), e => e.Code == DiagnosticCodes.TypeMismatch);
+    }
+
+    [Fact]
+    public void TypeChecker_TreatsCollectionForLoopVariableAsString()
+    {
+        var program = TestCompiler.ParseOrThrow(
+            """
+            let items = ["a", "b"]
+            for item in items
+                let bad = item + 1
+            end
+            """);
+
+        var diagnostics = new DiagnosticBag();
+        new TypeChecker(diagnostics).Analyze(program);
+
+        Assert.Contains(
+            diagnostics.GetErrors(),
+            e => e.Code == DiagnosticCodes.TypeMismatch &&
+                 e.Message.Contains("Cannot add string and number", StringComparison.Ordinal));
+    }
 }
