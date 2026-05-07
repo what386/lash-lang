@@ -142,6 +142,8 @@ fn build_tool_for_platform(tool_name, project_path, rid, bundle_dir)
 
     if ENABLE_SELF_CONTAINED
         publish_args += ["--self-contained"]
+    else
+        publish_args += ["--no-self-contained"]
     end
 
     dotnet publish "${publish_args[@]}"

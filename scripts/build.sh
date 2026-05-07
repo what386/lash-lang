@@ -123,6 +123,8 @@ build_tool_for_platform() {
     local publish_args=(${project_path} "-c" ${CONFIGURATION} "-r" ${rid} "-o" ${temp_dir})
     if (( ENABLE_SELF_CONTAINED != 0 )); then
         publish_args+=("--self-contained")
+    else
+        publish_args+=("--no-self-contained")
     fi
     dotnet publish "${publish_args[@]}"
     local project_stem=$(basename "$project_path" .csproj)
