@@ -1,0 +1,15 @@
+# Summary
+
+- [The Lash Book](./README.md)
+- [1. Getting Started](./01-getting-started.md)
+- [2. Values, Variables, and Scope](./02-values-and-variables.md)
+- [3. Expressions and Operators](./03-expressions-and-operators.md)
+- [4. Collections, Indexing, and argv](./04-collections-indexing-and-argv.md)
+- [5. Control Flow](./05-control-flow.md)
+- [6. Functions and Value Flow](./06-functions-and-value-flow.md)
+- [7. Shell Integration](./07-shell-integration.md)
+- [8. Process Control and Jobs](./08-process-control-and-jobs.md)
+- [9. Compile-Time Directives](./09-compile-time-directives.md)
+- [10. Diagnostics and Workflow](./10-diagnostics-and-workflow.md)
+- [11. What Lash Does Differently From Bash](./11-bash-differences.md)
+- [12. End-to-End Example](./12-end-to-end-example.md)
