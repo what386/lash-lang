@@ -1,6 +1,8 @@
 namespace Lash.Compiler.Ast;
+using System.Diagnostics.CodeAnalysis;
 using Lash.Compiler.Ast.Types;
 
+[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)]
 public abstract class AstNode
 {
     public int Line { get; set; }

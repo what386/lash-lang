@@ -1,6 +1,7 @@
 namespace Lash.Compiler;
 
 using System.Collections;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Lash.Compiler.Analysis;
 using Lash.Compiler.Ast;
@@ -182,6 +183,9 @@ internal sealed class Options {
 internal static class AstPrinter {
   public static void Print(AstNode node) { PrintNode(node, indent: 0); }
 
+  [UnconditionalSuppressMessage(
+      "Trimming", "IL2075",
+      Justification = "AST printer reflection is constrained to compiler AST types.")]
   private static void PrintNode(object? value, int indent) {
     if (value == null) {
       WriteIndent(indent);
@@ -214,6 +218,13 @@ internal static class AstPrinter {
       return;
     }
 
+    if (value is not AstNode astNode) {
+      WriteIndent(indent);
+      Console.WriteLine(value);
+      return;
+    }
+
+    type = astNode.GetType();
     WriteIndent(indent);
     Console.WriteLine(type.Name);
 
@@ -222,7 +233,7 @@ internal static class AstPrinter {
       if (!prop.CanRead)
         continue;
 
-      var propValue = prop.GetValue(value);
+      var propValue = prop.GetValue(astNode);
       WriteIndent(indent + 1);
       Console.WriteLine($"{prop.Name}:");
       PrintNode(propValue, indent + 2);
