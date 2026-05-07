@@ -13,8 +13,9 @@ This repository contains:
 
 Lash is under active development. The current implemented surface is documented in:
 
-- `docs/language-spec.md`
-- `docs/USAGE.md`
+- `docs/web/site/index.html` (interactive HTML docs)
+- `docs/book/README.md` (markdown source for the user guide)
+- `docs/language-spec.md` (reference)
 
 Implemented language features include:
 
@@ -31,10 +32,28 @@ Implemented language features include:
 
 ## Quick Start
 
-Read the usage guide:
+Build interactive HTML docs:
 
 ```bash
-cat docs/USAGE.md
+just docs-web-build
+```
+
+Open the web docs:
+
+```bash
+xdg-open docs/web/site/index.html
+```
+
+Read the markdown book source:
+
+```bash
+cat docs/book/README.md
+```
+
+Preview interactive docs locally:
+
+```bash
+just docs-web-preview
 ```
 
 Run a Lash script:
