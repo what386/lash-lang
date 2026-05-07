@@ -3,6 +3,7 @@
     <OutputType>Exe</OutputType>
     <AssemblyName>lash-lsp</AssemblyName>
     <TargetFramework>net10.0</TargetFramework>
+    <SelfContained>false</SelfContained>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Version>0.3.1</Version>
