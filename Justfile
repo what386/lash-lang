@@ -24,6 +24,12 @@ build-all-release-runtime:
 pack-binaries *args:
     scripts/pack.lash {{args}}
 
+docs-web-build:
+    cd docs/web && npm install && npm run build
+
+docs-web-preview:
+    cd docs/web && npm run preview
+
 gen-package:
     just build-all-release-runtime
     just pack-binaries --suffix -runtime
