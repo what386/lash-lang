@@ -1,6 +1,18 @@
 # Changelog — lash-lang
 
-*Generated on 2026-04-07*
+*Generated on 2026-05-07*
+
+## 0.16.0 — 2026-05-06
+
+### High Priority
+
+- Serialize per-RID tool publishing in build script to avoid project-output races `bug`, `build`, `scripts`
+
+### Changes
+
+- cli: Add 'watch' command to cli
+- compiler: rename/update warnings to be clearer
+
 
 ## 0.15.0 — 2026-04-07
 
