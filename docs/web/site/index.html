@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Lash Book - The Lash Book</title>
+  <script>
+    (() => {
+      const stored = (() => {
+        try {
+          return localStorage.getItem("lash-docs-theme");
+        } catch {
+          return null;
+        }
+      })();
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = stored || (prefersDark ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">Menu</button>
+    <a class="brand" href="index.html">The Lash Book</a>
+    <label class="search-wrap" for="search-input">
+      <span class="search-label">Search</span>
+      <input id="search-input" type="search" placeholder="Find chapter text..." autocomplete="off">
+    </label>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme" aria-pressed="false">
+      <span class="theme-toggle-icon" aria-hidden="true"></span>
+      <span class="theme-toggle-text">Theme</span>
+    </button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav>
+        <ul class="chapter-list"><li><a href="index.html">The Lash Book</a></li><li><a href="01-getting-started.html">1. Getting Started</a></li><li><a href="02-values-and-variables.html">2. Values, Variables, and Scope</a></li><li><a href="03-expressions-and-operators.html">3. Expressions and Operators</a></li><li><a href="04-collections-indexing-and-argv.html">4. Collections, Indexing, and argv</a></li><li><a href="05-control-flow.html">5. Control Flow</a></li><li><a href="06-functions-and-value-flow.html">6. Functions and Value Flow</a></li><li><a href="07-shell-integration.html">7. Shell Integration</a></li><li><a href="08-process-control-and-jobs.html">8. Process Control and Jobs</a></li><li><a href="09-compile-time-directives.html">9. Compile-Time Directives</a></li><li><a href="10-diagnostics-and-workflow.html">10. Diagnostics and Workflow</a></li><li><a href="11-bash-differences.html">11. What Lash Does Differently From Bash</a></li><li><a href="12-end-to-end-example.html">12. End-to-End Example</a></li></ul>
+      </nav>
+      <div class="search-results" id="search-results" aria-live="polite"></div>
+    </aside>
+
+    <main class="content" id="main-content">
+      <article><h1>The Lash Book</h1>
+<p>This guide teaches Lash as a programming language for Bash automation.</p>
+<p>Lash keeps shell scripts close to Bash, but adds a parser, semantic checks, structured blocks, arrays and maps, compile-time directives, and a small amount of safer syntax around common shell patterns.</p>
+<p>Use this book for learning and examples. Use the <a href="../../language-spec.md">language spec</a> when you need the exact implemented surface.</p>
+<h2>How to read this</h2>
+<ol>
+<li>Read chapters 1-6 first. They cover the Lash syntax you will write most often.</li>
+<li>Use chapters 7-9 when you need shell interop, jobs, traps, or compile-time directives.</li>
+<li>Keep chapter 11 nearby when porting Bash; it calls out the behavior that is easy to misread.</li>
+</ol>
+<h2>Navigation</h2>
+<p>See <a href="index.html">SUMMARY.md</a>.</p>
+</article>
+      <footer class="pager">
+        <span class="pager-spacer"></span>
+        <a class="pager-link" href="01-getting-started.html">1. Getting Started →</a>
+      </footer>
+    </main>
+  </div>
+
+  <script src="assets/app.js" defer></script>
+</body>
+</html>

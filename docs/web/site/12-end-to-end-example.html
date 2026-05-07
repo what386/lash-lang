@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>12. End-to-End Example - The Lash Book</title>
+  <script>
+    (() => {
+      const stored = (() => {
+        try {
+          return localStorage.getItem("lash-docs-theme");
+        } catch {
+          return null;
+        }
+      })();
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = stored || (prefersDark ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">Menu</button>
+    <a class="brand" href="index.html">The Lash Book</a>
+    <label class="search-wrap" for="search-input">
+      <span class="search-label">Search</span>
+      <input id="search-input" type="search" placeholder="Find chapter text..." autocomplete="off">
+    </label>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme" aria-pressed="false">
+      <span class="theme-toggle-icon" aria-hidden="true"></span>
+      <span class="theme-toggle-text">Theme</span>
+    </button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav>
+        <ul class="chapter-list"><li><a href="index.html">The Lash Book</a></li><li><a href="01-getting-started.html">1. Getting Started</a></li><li><a href="02-values-and-variables.html">2. Values, Variables, and Scope</a></li><li><a href="03-expressions-and-operators.html">3. Expressions and Operators</a></li><li><a href="04-collections-indexing-and-argv.html">4. Collections, Indexing, and argv</a></li><li><a href="05-control-flow.html">5. Control Flow</a></li><li><a href="06-functions-and-value-flow.html">6. Functions and Value Flow</a></li><li><a href="07-shell-integration.html">7. Shell Integration</a></li><li><a href="08-process-control-and-jobs.html">8. Process Control and Jobs</a></li><li><a href="09-compile-time-directives.html">9. Compile-Time Directives</a></li><li><a href="10-diagnostics-and-workflow.html">10. Diagnostics and Workflow</a></li><li><a href="11-bash-differences.html">11. What Lash Does Differently From Bash</a></li><li><a href="12-end-to-end-example.html">12. End-to-End Example</a></li></ul>
+      </nav>
+      <div class="search-results" id="search-results" aria-live="polite"></div>
+    </aside>
+
+    <main class="content" id="main-content">
+      <article><h1>12. End-to-End Example</h1>
+<p>This script packages files from <code>dist</code>, writes checksums, and demonstrates common Lash patterns.</p>
+<pre><code class="language-lash">#!/usr/bin/env -S lash run
+
+set -euo pipefail
+shopt -s nullglob
+
+let dist = &quot;./dist&quot;
+let checksum_file = dist + &quot;/SHA256SUMS&quot;
+
+if $(test $&quot;-d \&quot;{dist}\&quot;&quot;) != 1
+    echo $&quot;missing directory: {dist}&quot;
+    exit 1
+end
+
+fn checksum(path)
+    return $(sha256sum &quot;$path&quot; | cut -d' ' -f1)
+end
+
+var count = 0
+echo &quot;&quot; &gt; $&quot;{checksum_file}&quot;
+
+for file in ./dist/*.tar.gz
+    let sum = checksum(file)
+    echo $&quot;{sum}  {file}&quot; &gt;&gt; $&quot;{checksum_file}&quot;
+    count += 1
+end
+
+if count == 0
+    echo &quot;no archives found&quot;
+    exit 1
+end
+
+echo $&quot;wrote {count} checksums to {checksum_file}&quot;
+</code></pre>
+<h2>What this uses</h2>
+<ul>
+<li><code>set</code> and <code>shopt</code> as bare Bash command statements</li>
+<li>immutable <code>let</code> bindings for configuration</li>
+<li><code>$(test &quot;...&quot;)</code> to turn a Bash test into <code>1</code> or <code>0</code></li>
+<li>a function that returns a value through output</li>
+<li>a glob <code>for</code> loop</li>
+<li>arithmetic <code>+=</code></li>
+<li>string interpolation</li>
+<li>redirection with <code>&gt;</code> and <code>&gt;&gt;</code></li>
+</ul>
+<h2>Check it before running</h2>
+<pre><code class="language-bash">lash check checksums.lash
+lash run checksums.lash
+</code></pre>
+<p>When behavior is unclear, compile the script and inspect the Bash:</p>
+<pre><code class="language-bash">lash compile checksums.lash -o checksums.sh
+sed -n '1,200p' checksums.sh
+</code></pre>
+</article>
+      <footer class="pager">
+        <a class="pager-link" href="11-bash-differences.html">← 11. What Lash Does Differently From Bash</a>
+        <span class="pager-spacer"></span>
+      </footer>
+    </main>
+  </div>
+
+  <script src="assets/app.js" defer></script>
+</body>
+</html>

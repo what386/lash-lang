@@ -1,0 +1,13 @@
+{
+  "name": "lash-docs-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "preview": "python3 -m http.server --directory site 4173"
+  },
+  "dependencies": {
+    "markdown-it": "14.1.0"
+  }
+}

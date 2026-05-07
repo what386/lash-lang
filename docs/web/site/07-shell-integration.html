@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>7. Shell Integration - The Lash Book</title>
+  <script>
+    (() => {
+      const stored = (() => {
+        try {
+          return localStorage.getItem("lash-docs-theme");
+        } catch {
+          return null;
+        }
+      })();
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = stored || (prefersDark ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">Menu</button>
+    <a class="brand" href="index.html">The Lash Book</a>
+    <label class="search-wrap" for="search-input">
+      <span class="search-label">Search</span>
+      <input id="search-input" type="search" placeholder="Find chapter text..." autocomplete="off">
+    </label>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme" aria-pressed="false">
+      <span class="theme-toggle-icon" aria-hidden="true"></span>
+      <span class="theme-toggle-text">Theme</span>
+    </button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav>
+        <ul class="chapter-list"><li><a href="index.html">The Lash Book</a></li><li><a href="01-getting-started.html">1. Getting Started</a></li><li><a href="02-values-and-variables.html">2. Values, Variables, and Scope</a></li><li><a href="03-expressions-and-operators.html">3. Expressions and Operators</a></li><li><a href="04-collections-indexing-and-argv.html">4. Collections, Indexing, and argv</a></li><li><a href="05-control-flow.html">5. Control Flow</a></li><li><a href="06-functions-and-value-flow.html">6. Functions and Value Flow</a></li><li><a href="07-shell-integration.html">7. Shell Integration</a></li><li><a href="08-process-control-and-jobs.html">8. Process Control and Jobs</a></li><li><a href="09-compile-time-directives.html">9. Compile-Time Directives</a></li><li><a href="10-diagnostics-and-workflow.html">10. Diagnostics and Workflow</a></li><li><a href="11-bash-differences.html">11. What Lash Does Differently From Bash</a></li><li><a href="12-end-to-end-example.html">12. End-to-End Example</a></li></ul>
+      </nav>
+      <div class="search-results" id="search-results" aria-live="polite"></div>
+    </aside>
+
+    <main class="content" id="main-content">
+      <article><h1>7. Shell Integration</h1>
+<p>Lash is built for shell scripts. It supports many Bash features directly, but it still parses known Lash syntax first.</p>
+<h2>Bare shell commands</h2>
+<p>Most shell-like lines that are not recognized as Lash statements become raw command statements:</p>
+<pre><code class="language-lash">set -euo pipefail
+shopt -s nullglob
+export RELEASE_CHANNEL=stable
+source ./env.sh
+echo &quot;building...&quot;
+</code></pre>
+<p>The compiler recognizes common shell builtins such as <code>set</code>, <code>export</code>, <code>shopt</code>, <code>alias</code>, <code>source</code>, <code>.</code>, <code>unset</code>, <code>declare</code>, and <code>local</code> for validation and warnings.</p>
+<p>Known Lash statement prefixes such as <code>if</code>, <code>for</code>, <code>var</code>, <code>let</code>, <code>return</code>, <code>trap</code>, and <code>wait</code> are parsed as Lash syntax.</p>
+<h2><code>sh</code> statements</h2>
+<p>Use <code>sh &quot;...&quot;</code> when you want to force a string literal to be emitted as shell code.</p>
+<pre><code class="language-lash">sh &quot;printf '%s\n' \&quot;$HOME\&quot;&quot;
+</code></pre>
+<p>The payload must be a string literal. This restriction keeps Bash code generation predictable.</p>
+<h2>Command substitution</h2>
+<pre><code class="language-lash">let branch = $(git rev-parse --abbrev-ref HEAD)
+echo $&quot;branch={branch}&quot;
+</code></pre>
+<p>Lash preserves Bash command substitution syntax by rewriting it internally before parsing.</p>
+<p>Interpolated command segments are supported:</p>
+<pre><code class="language-lash">let dist = &quot;./dist&quot;
+let archives = $(find $&quot;\&quot;{dist}\&quot; -maxdepth 1 -name '*.tar.gz'&quot;)
+</code></pre>
+<h2><code>test</code> captures</h2>
+<pre><code class="language-lash">let path = &quot;.git&quot;
+let has_git = $(test $&quot;-d \&quot;{path}\&quot;&quot;)
+
+if has_git == 1
+    echo &quot;repo&quot;
+end
+</code></pre>
+<p><code>$(test &quot;...&quot;)</code> lowers to a Bash <code>[[ ... ]]</code> check that echoes <code>1</code> or <code>0</code>. The test payload must be a string literal.</p>
+<h2>Array spread in shell payloads</h2>
+<p>Inside shell payload strings, <code>$name...</code> expands a Lash array variable as Bash <code>&quot;${name[@]}&quot;</code>.</p>
+<pre><code class="language-lash">let files = [&quot;a.txt&quot;, &quot;b.txt&quot;]
+sh &quot;printf '%s\n' $files...&quot;
+</code></pre>
+<h2>Process substitution</h2>
+<pre><code class="language-lash">diff &lt;(sort left.txt) &lt;(sort right.txt)
+</code></pre>
+<p>Input process substitution <code>&lt;(...)</code> and output process substitution <code>&gt;(...)</code> are supported and lower back to Bash process substitution.</p>
+<h2>Redirects</h2>
+<p>Redirect expressions are supported as standalone expression statements.</p>
+<pre><code class="language-lash">echo &quot;log&quot; &gt; &quot;build.log&quot;
+echo &quot;more&quot; &gt;&gt; &quot;build.log&quot;
+echo &quot;error&quot; 2&gt; &quot;error.log&quot;
+echo &quot;all&quot; &amp;&gt; &quot;combined.log&quot;
+cat &lt; &quot;input.txt&quot;
+exec &lt;&gt; &quot;state.db&quot;
+</code></pre>
+<p>Supported redirect operators:</p>
+<ul>
+<li><code>&gt;</code> stdout truncate</li>
+<li><code>&gt;&gt;</code> stdout append</li>
+<li><code>2&gt;</code> stderr truncate</li>
+<li><code>2&gt;&gt;</code> stderr append</li>
+<li><code>&amp;&gt;</code> stdout and stderr truncate</li>
+<li><code>&amp;&gt;&gt;</code> stdout and stderr append</li>
+<li><code>&lt;</code> stdin from file</li>
+<li><code>&lt;&gt;</code> read/write file</li>
+<li><code>n&gt;&amp;m</code> duplicate file descriptor</li>
+<li><code>n&gt;&amp;-</code> close file descriptor</li>
+</ul>
+<h2>Here input</h2>
+<pre><code class="language-lash">cat &lt;&lt; &quot;one line&quot;
+
+cat &lt;&lt; [[line one
+line two]]
+
+cat &lt;&lt;- [[	line with leading tab
+	next line]]
+</code></pre>
+<p>Single-line <code>&lt;&lt;</code> string payloads lower to Bash here-strings. Multiline literals lower to heredocs. <code>&lt;&lt;-</code> requires a multiline string literal and lowers to a tab-stripping heredoc.</p>
+<p>The deprecated Bash spelling <code>&lt;&lt;&lt;</code> is not the Lash syntax. Use <code>&lt;&lt;</code>.</p>
+</article>
+      <footer class="pager">
+        <a class="pager-link" href="06-functions-and-value-flow.html">← 6. Functions and Value Flow</a>
+        <a class="pager-link" href="08-process-control-and-jobs.html">8. Process Control and Jobs →</a>
+      </footer>
+    </main>
+  </div>
+
+  <script src="assets/app.js" defer></script>
+</body>
+</html>

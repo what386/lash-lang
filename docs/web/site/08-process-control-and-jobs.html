@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>8. Process Control and Jobs - The Lash Book</title>
+  <script>
+    (() => {
+      const stored = (() => {
+        try {
+          return localStorage.getItem("lash-docs-theme");
+        } catch {
+          return null;
+        }
+      })();
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = stored || (prefersDark ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">Menu</button>
+    <a class="brand" href="index.html">The Lash Book</a>
+    <label class="search-wrap" for="search-input">
+      <span class="search-label">Search</span>
+      <input id="search-input" type="search" placeholder="Find chapter text..." autocomplete="off">
+    </label>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme" aria-pressed="false">
+      <span class="theme-toggle-icon" aria-hidden="true"></span>
+      <span class="theme-toggle-text">Theme</span>
+    </button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav>
+        <ul class="chapter-list"><li><a href="index.html">The Lash Book</a></li><li><a href="01-getting-started.html">1. Getting Started</a></li><li><a href="02-values-and-variables.html">2. Values, Variables, and Scope</a></li><li><a href="03-expressions-and-operators.html">3. Expressions and Operators</a></li><li><a href="04-collections-indexing-and-argv.html">4. Collections, Indexing, and argv</a></li><li><a href="05-control-flow.html">5. Control Flow</a></li><li><a href="06-functions-and-value-flow.html">6. Functions and Value Flow</a></li><li><a href="07-shell-integration.html">7. Shell Integration</a></li><li><a href="08-process-control-and-jobs.html">8. Process Control and Jobs</a></li><li><a href="09-compile-time-directives.html">9. Compile-Time Directives</a></li><li><a href="10-diagnostics-and-workflow.html">10. Diagnostics and Workflow</a></li><li><a href="11-bash-differences.html">11. What Lash Does Differently From Bash</a></li><li><a href="12-end-to-end-example.html">12. End-to-End Example</a></li></ul>
+      </nav>
+      <div class="search-results" id="search-results" aria-live="polite"></div>
+    </aside>
+
+    <main class="content" id="main-content">
+      <article><h1>8. Process Control and Jobs</h1>
+<p>Lash exposes Bash process control with structured syntax for the common cases.</p>
+<h2>shift</h2>
+<pre><code class="language-lash">shift
+shift 2
+</code></pre>
+<p><code>shift</code> defaults to <code>1</code>. Lash guards the generated Bash so shifting past the end clears the argument list instead of failing halfway through.</p>
+<h2>subshell</h2>
+<pre><code class="language-lash">subshell
+    cd build
+    make
+end
+</code></pre>
+<p><code>subshell ... end</code> lowers to a Bash subshell block:</p>
+<pre><code class="language-bash">(
+  ...
+)
+</code></pre>
+<h2>Capturing subshell status or pid</h2>
+<pre><code class="language-lash">var status = 0
+subshell into status
+    false
+end
+
+var pid = 0
+subshell into pid
+    sleep 1
+end &amp;
+</code></pre>
+<p>For a foreground subshell, <code>into</code> captures <code>$?</code>. For a background subshell, <code>into</code> captures <code>$!</code>.</p>
+<h2>coproc</h2>
+<pre><code class="language-lash">var copid = 0
+
+coproc into copid
+    sh &quot;cat&quot;
+end
+</code></pre>
+<p><code>coproc ... end</code> lowers to Bash <code>coproc { ... }</code>. <code>into</code> captures <code>${COPROC_PID}</code>.</p>
+<h2>wait</h2>
+<pre><code class="language-lash">wait
+wait pid
+wait pid into status
+</code></pre>
+<p><code>wait</code> lowers to Bash <code>wait</code>. <code>into</code> captures the resulting exit status.</p>
+<h2>wait jobs</h2>
+<pre><code class="language-lash">subshell
+    sleep 1
+end &amp;
+
+coproc
+    sleep 1
+end
+
+wait jobs
+</code></pre>
+<p><code>wait jobs</code> waits for jobs that Lash tracks from background <code>subshell</code> and <code>coproc</code> statements in the current analysis scope. It does not discover arbitrary jobs started by raw shell commands.</p>
+<p>The compiler warns when <code>wait jobs</code> has no tracked jobs.</p>
+<h2>trap and untrap</h2>
+<pre><code class="language-lash">fn cleanup()
+    echo &quot;cleanup&quot;
+end
+
+trap EXIT into cleanup()
+trap INT &quot;echo interrupted&quot;
+untrap INT
+</code></pre>
+<p><code>trap SIGNAL into function()</code> registers a Lash function as the handler. Handler calls cannot include arguments. <code>trap SIGNAL &quot;command&quot;</code> emits a Bash command handler. <code>untrap SIGNAL</code> clears the trap.</p>
+<p>Valid trap signals are checked by the compiler.</p>
+</article>
+      <footer class="pager">
+        <a class="pager-link" href="07-shell-integration.html">← 7. Shell Integration</a>
+        <a class="pager-link" href="09-compile-time-directives.html">9. Compile-Time Directives →</a>
+      </footer>
+    </main>
+  </div>
+
+  <script src="assets/app.js" defer></script>
+</body>
+</html>

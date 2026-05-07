@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3. Expressions and Operators - The Lash Book</title>
+  <script>
+    (() => {
+      const stored = (() => {
+        try {
+          return localStorage.getItem("lash-docs-theme");
+        } catch {
+          return null;
+        }
+      })();
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = stored || (prefersDark ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">Menu</button>
+    <a class="brand" href="index.html">The Lash Book</a>
+    <label class="search-wrap" for="search-input">
+      <span class="search-label">Search</span>
+      <input id="search-input" type="search" placeholder="Find chapter text..." autocomplete="off">
+    </label>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme" aria-pressed="false">
+      <span class="theme-toggle-icon" aria-hidden="true"></span>
+      <span class="theme-toggle-text">Theme</span>
+    </button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav>
+        <ul class="chapter-list"><li><a href="index.html">The Lash Book</a></li><li><a href="01-getting-started.html">1. Getting Started</a></li><li><a href="02-values-and-variables.html">2. Values, Variables, and Scope</a></li><li><a href="03-expressions-and-operators.html">3. Expressions and Operators</a></li><li><a href="04-collections-indexing-and-argv.html">4. Collections, Indexing, and argv</a></li><li><a href="05-control-flow.html">5. Control Flow</a></li><li><a href="06-functions-and-value-flow.html">6. Functions and Value Flow</a></li><li><a href="07-shell-integration.html">7. Shell Integration</a></li><li><a href="08-process-control-and-jobs.html">8. Process Control and Jobs</a></li><li><a href="09-compile-time-directives.html">9. Compile-Time Directives</a></li><li><a href="10-diagnostics-and-workflow.html">10. Diagnostics and Workflow</a></li><li><a href="11-bash-differences.html">11. What Lash Does Differently From Bash</a></li><li><a href="12-end-to-end-example.html">12. End-to-End Example</a></li></ul>
+      </nav>
+      <div class="search-results" id="search-results" aria-live="polite"></div>
+    </aside>
+
+    <main class="content" id="main-content">
+      <article><h1>3. Expressions and Operators</h1>
+<p>Lash expressions are checked before they are lowered to Bash. Some operators can be used anywhere a value is allowed; others are only supported in specific contexts.</p>
+<h2>Arithmetic</h2>
+<pre><code class="language-lash">var n = 10
+n += 2
+n -= 1
+n *= 3
+n /= 2
+n %= 4
+n++
+n--
+</code></pre>
+<p>Arithmetic operators are numeric:</p>
+<ul>
+<li><code>*</code>, <code>/</code>, <code>%</code></li>
+<li><code>+</code>, <code>-</code></li>
+<li>unary <code>-</code>, unary <code>+</code></li>
+</ul>
+<p>Compound assignments other than <code>+=</code> require a variable target and numeric operands.</p>
+<h2>String concatenation with <code>+</code></h2>
+<p><code>+</code> is numeric unless either side is string-like.</p>
+<pre><code class="language-lash">let name = &quot;lash&quot;
+let archive = name + &quot;.tar.gz&quot;
+</code></pre>
+<p>Mixed <code>number + string</code> is rejected when the checker can prove the mismatch.</p>
+<h2>Comparisons and truthiness</h2>
+<pre><code class="language-lash">if count &gt; 0
+    echo &quot;has items&quot;
+end
+
+if name == &quot;lash&quot;
+    echo &quot;matched&quot;
+end
+</code></pre>
+<p><code>==</code> and <code>!=</code> lower to Bash <code>[[ left == right ]]</code> in condition code paths. Numeric comparisons such as <code>&lt;</code>, <code>&gt;</code>, <code>&lt;=</code>, and <code>&gt;=</code> lower to arithmetic tests.</p>
+<p>For a bare condition like <code>if count</code>, Lash treats numeric non-zero as true. <code>argv</code> is special: bare <code>argv</code> in a condition checks whether any positional arguments exist.</p>
+<h2>Regex match</h2>
+<pre><code class="language-lash">if branch =~ &quot;^main$&quot;
+    echo &quot;protected branch&quot;
+end
+</code></pre>
+<p><code>=~</code> lowers to Bash regex matching in condition positions. It is intentionally not supported as a general value expression.</p>
+<h2>Logical operators</h2>
+<pre><code class="language-lash">if ready &amp;&amp; !dry_run
+    echo &quot;apply&quot;
+end
+</code></pre>
+<p>Supported logical operators:</p>
+<ul>
+<li><code>!</code></li>
+<li><code>&amp;&amp;</code></li>
+<li><code>||</code></li>
+</ul>
+<h2>Length with <code>#</code></h2>
+<pre><code class="language-lash">let items = [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;]
+let item_count = #items
+let first_length = #items[0]
+let arg_count = #argv
+echo $&quot;items={item_count}&quot;
+echo $&quot;first-length={first_length}&quot;
+echo $&quot;args={arg_count}&quot;
+</code></pre>
+<p><code>#</code> works for identifiers, index access, string literals, array literals, map literals, and <code>argv</code>.</p>
+<h2>Range expressions</h2>
+<pre><code class="language-lash">for i in 1..5
+    echo $&quot;{i}&quot;
+end
+
+for i in 1..10 step 2
+    echo $&quot;{i}&quot;
+end
+</code></pre>
+<p>Ranges are only supported as the top-level iterable in <code>for ... in</code>. They lower through <code>seq</code>.</p>
+<h2>Value pipes</h2>
+<p>Value pipes pass the left value as the first argument to a function call on the right.</p>
+<pre><code class="language-lash">fn wrap(value, prefix = &quot;[&quot;)
+    return prefix + value + &quot;]&quot;
+end
+
+let label = &quot;ok&quot; | wrap(&quot;status=&quot;)
+</code></pre>
+<p>As an expression, the right-hand side of <code>|</code> must be a function call. As a standalone statement, pipe handling is more limited and intended for assignment-sink forms supported by the compiler.</p>
+</article>
+      <footer class="pager">
+        <a class="pager-link" href="02-values-and-variables.html">← 2. Values, Variables, and Scope</a>
+        <a class="pager-link" href="04-collections-indexing-and-argv.html">4. Collections, Indexing, and argv →</a>
+      </footer>
+    </main>
+  </div>
+
+  <script src="assets/app.js" defer></script>
+</body>
+</html>

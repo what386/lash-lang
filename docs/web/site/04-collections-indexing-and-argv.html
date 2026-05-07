@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>4. Collections, Indexing, and argv - The Lash Book</title>
+  <script>
+    (() => {
+      const stored = (() => {
+        try {
+          return localStorage.getItem("lash-docs-theme");
+        } catch {
+          return null;
+        }
+      })();
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = stored || (prefersDark ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">Menu</button>
+    <a class="brand" href="index.html">The Lash Book</a>
+    <label class="search-wrap" for="search-input">
+      <span class="search-label">Search</span>
+      <input id="search-input" type="search" placeholder="Find chapter text..." autocomplete="off">
+    </label>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme" aria-pressed="false">
+      <span class="theme-toggle-icon" aria-hidden="true"></span>
+      <span class="theme-toggle-text">Theme</span>
+    </button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav>
+        <ul class="chapter-list"><li><a href="index.html">The Lash Book</a></li><li><a href="01-getting-started.html">1. Getting Started</a></li><li><a href="02-values-and-variables.html">2. Values, Variables, and Scope</a></li><li><a href="03-expressions-and-operators.html">3. Expressions and Operators</a></li><li><a href="04-collections-indexing-and-argv.html">4. Collections, Indexing, and argv</a></li><li><a href="05-control-flow.html">5. Control Flow</a></li><li><a href="06-functions-and-value-flow.html">6. Functions and Value Flow</a></li><li><a href="07-shell-integration.html">7. Shell Integration</a></li><li><a href="08-process-control-and-jobs.html">8. Process Control and Jobs</a></li><li><a href="09-compile-time-directives.html">9. Compile-Time Directives</a></li><li><a href="10-diagnostics-and-workflow.html">10. Diagnostics and Workflow</a></li><li><a href="11-bash-differences.html">11. What Lash Does Differently From Bash</a></li><li><a href="12-end-to-end-example.html">12. End-to-End Example</a></li></ul>
+      </nav>
+      <div class="search-results" id="search-results" aria-live="polite"></div>
+    </aside>
+
+    <main class="content" id="main-content">
+      <article><h1>4. Collections, Indexing, and argv</h1>
+<p>Lash arrays and maps lower to Bash arrays. The compiler tracks whether a container is numeric-indexed or string-keyed so accidental mixed indexing can be reported early.</p>
+<h2>Arrays</h2>
+<pre><code class="language-lash">let items = [&quot;alpha&quot;, &quot;beta&quot;, &quot;gamma&quot;]
+let count = #items
+
+echo $&quot;{items[0]}&quot;
+echo $&quot;count={count}&quot;
+</code></pre>
+<p>Numeric arrays lower to Bash indexed arrays.</p>
+<h2>Array append</h2>
+<p><code>+=</code> is overloaded. With arrays, it appends array values.</p>
+<pre><code class="language-lash">var items = [&quot;alpha&quot;]
+items += [&quot;beta&quot;, &quot;gamma&quot;]
+</code></pre>
+<p>When the right-hand side looks numeric, <code>+=</code> is arithmetic. If the compiler cannot tell which mode you intended, it reports an ambiguity.</p>
+<h2>Maps</h2>
+<pre><code class="language-lash">let meta = {
+    &quot;name&quot;: &quot;lash&quot;,
+    &quot;shell&quot;: &quot;bash&quot;
+}
+
+echo $&quot;{meta[&quot;name&quot;]}&quot;
+</code></pre>
+<p>Maps are string-keyed containers and lower to Bash associative arrays. Map literal keys must be strings.</p>
+<p>Do not mix numeric and string keys for the same container.</p>
+<h2>Index assignments</h2>
+<pre><code class="language-lash">var items = [&quot;a&quot;, &quot;b&quot;]
+items[1] = &quot;changed&quot;
+
+var meta = {&quot;name&quot;: &quot;lash&quot;}
+meta[&quot;version&quot;] = &quot;0.3&quot;
+</code></pre>
+<p>Index assignment targets must be named variables. Assigning into an arbitrary expression is rejected for Bash code generation.</p>
+<h2>argv</h2>
+<p><code>argv</code> represents script positional arguments.</p>
+<pre><code class="language-lash">let arg_count = #argv
+echo $&quot;{argv[0]}&quot;
+echo $&quot;arg-count={arg_count}&quot;
+
+for arg in argv
+    echo $&quot;{arg}&quot;
+end
+</code></pre>
+<p>Lash uses zero-based indexing for <code>argv[index]</code>. Bash positional parameters are one-based, so the compiler lowers <code>argv[0]</code> to the first Bash argument.</p>
+<p>Bare <code>argv</code> is allowed in contexts where the compiler can expand it safely, such as declarations, function arguments, <code>for</code> ranges, appends, and length checks.</p>
+<pre><code class="language-lash">let args = argv
+items += argv
+</code></pre>
+<p>Assignment to <code>argv</code> is not supported.</p>
+</article>
+      <footer class="pager">
+        <a class="pager-link" href="03-expressions-and-operators.html">← 3. Expressions and Operators</a>
+        <a class="pager-link" href="05-control-flow.html">5. Control Flow →</a>
+      </footer>
+    </main>
+  </div>
+
+  <script src="assets/app.js" defer></script>
+</body>
+</html>

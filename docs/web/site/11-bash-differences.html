@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>11. What Lash Does Differently From Bash - The Lash Book</title>
+  <script>
+    (() => {
+      const stored = (() => {
+        try {
+          return localStorage.getItem("lash-docs-theme");
+        } catch {
+          return null;
+        }
+      })();
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = stored || (prefersDark ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">Menu</button>
+    <a class="brand" href="index.html">The Lash Book</a>
+    <label class="search-wrap" for="search-input">
+      <span class="search-label">Search</span>
+      <input id="search-input" type="search" placeholder="Find chapter text..." autocomplete="off">
+    </label>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme" aria-pressed="false">
+      <span class="theme-toggle-icon" aria-hidden="true"></span>
+      <span class="theme-toggle-text">Theme</span>
+    </button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav>
+        <ul class="chapter-list"><li><a href="index.html">The Lash Book</a></li><li><a href="01-getting-started.html">1. Getting Started</a></li><li><a href="02-values-and-variables.html">2. Values, Variables, and Scope</a></li><li><a href="03-expressions-and-operators.html">3. Expressions and Operators</a></li><li><a href="04-collections-indexing-and-argv.html">4. Collections, Indexing, and argv</a></li><li><a href="05-control-flow.html">5. Control Flow</a></li><li><a href="06-functions-and-value-flow.html">6. Functions and Value Flow</a></li><li><a href="07-shell-integration.html">7. Shell Integration</a></li><li><a href="08-process-control-and-jobs.html">8. Process Control and Jobs</a></li><li><a href="09-compile-time-directives.html">9. Compile-Time Directives</a></li><li><a href="10-diagnostics-and-workflow.html">10. Diagnostics and Workflow</a></li><li><a href="11-bash-differences.html">11. What Lash Does Differently From Bash</a></li><li><a href="12-end-to-end-example.html">12. End-to-End Example</a></li></ul>
+      </nav>
+      <div class="search-results" id="search-results" aria-live="polite"></div>
+    </aside>
+
+    <main class="content" id="main-content">
+      <article><h1>11. What Lash Does Differently From Bash</h1>
+<p>Lash compiles to Bash, but it is not Bash syntax with a different file extension. This chapter lists the differences that matter most when reading or porting scripts.</p>
+<h2>Blocks close with <code>end</code></h2>
+<pre><code class="language-lash">if ready
+    echo &quot;ready&quot;
+end
+
+for file in ./*.lash
+    echo $&quot;{file}&quot;
+end
+</code></pre>
+<p>Generated Bash uses <code>fi</code>, <code>done</code>, and <code>esac</code>; Lash source uses <code>end</code>.</p>
+<h2>Declarations are checked</h2>
+<p>Bash lets you assign almost anywhere. Lash distinguishes declaration from assignment.</p>
+<pre><code class="language-lash">let name = &quot;lash&quot;
+name = &quot;other&quot; // error
+</code></pre>
+<p>Variables must be declared before use. <code>let</code> cannot be reassigned. <code>readonly</code> also lowers to Bash readonly behavior.</p>
+<h2>Conditions are expressions</h2>
+<pre><code class="language-lash">if count &gt; 0
+    echo &quot;non-zero&quot;
+end
+</code></pre>
+<p>Lash generates Bash tests for you. Numeric comparisons use arithmetic tests. String equality uses <code>[[ ... ]]</code>. Regex <code>=~</code> is supported in conditions only.</p>
+<h2>Booleans are numeric at runtime</h2>
+<p><code>true</code> lowers to <code>1</code>; <code>false</code> lowers to <code>0</code>.</p>
+<h2>Functions return values by output</h2>
+<pre><code class="language-lash">fn name()
+    return &quot;lash&quot;
+end
+</code></pre>
+<p>This emits <code>echo &quot;lash&quot;</code> followed by <code>return 0</code>. It is designed for command-substitution style value flow, not Bash numeric return status.</p>
+<h2>argv is zero-based</h2>
+<pre><code class="language-lash">let arg_count = #argv
+echo $&quot;{argv[0]}&quot;
+echo $&quot;{arg_count}&quot;
+</code></pre>
+<p>Bash positional parameters are one-based after <code>$0</code>. Lash <code>argv[0]</code> means the first script argument.</p>
+<h2>Maps are Bash associative arrays</h2>
+<pre><code class="language-lash">let meta = {&quot;name&quot;: &quot;lash&quot;}
+echo $&quot;{meta[&quot;name&quot;]}&quot;
+</code></pre>
+<p>The compiler lowers string-keyed maps to Bash associative arrays and enforces string keys for map literals.</p>
+<h2>Ranges are Lash syntax</h2>
+<pre><code class="language-lash">for i in 1..5 step 2
+    echo $&quot;{i}&quot;
+end
+</code></pre>
+<p>Ranges lower through <code>seq</code> and are only supported as <code>for</code> iterables.</p>
+<h2>wait jobs is Lash-tracked</h2>
+<p><code>wait jobs</code> waits for background <code>subshell</code> and <code>coproc</code> jobs the compiler tracks. It does not scan arbitrary Bash jobs started by raw command lines.</p>
+<h2>Bare Bash is still supported</h2>
+<p>These shell forms are intentionally accepted:</p>
+<pre><code class="language-lash">set -euo pipefail
+export NAME=value
+source ./env.sh
+shopt -s nullglob
+alias ll='ls -l'
+unset NAME
+declare -A table
+local value=1
+</code></pre>
+<p>Command substitution, process substitution, globs, redirects, heredocs, traps, background jobs, and <code>coproc</code> are also supported. Lash adds structure around them; it does not remove Bash from the language.</p>
+</article>
+      <footer class="pager">
+        <a class="pager-link" href="10-diagnostics-and-workflow.html">← 10. Diagnostics and Workflow</a>
+        <a class="pager-link" href="12-end-to-end-example.html">12. End-to-End Example →</a>
+      </footer>
+    </main>
+  </div>
+
+  <script src="assets/app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>1. Getting Started - The Lash Book</title>
+  <script>
+    (() => {
+      const stored = (() => {
+        try {
+          return localStorage.getItem("lash-docs-theme");
+        } catch {
+          return null;
+        }
+      })();
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = stored || (prefersDark ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">Menu</button>
+    <a class="brand" href="index.html">The Lash Book</a>
+    <label class="search-wrap" for="search-input">
+      <span class="search-label">Search</span>
+      <input id="search-input" type="search" placeholder="Find chapter text..." autocomplete="off">
+    </label>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme" aria-pressed="false">
+      <span class="theme-toggle-icon" aria-hidden="true"></span>
+      <span class="theme-toggle-text">Theme</span>
+    </button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav>
+        <ul class="chapter-list"><li><a href="index.html">The Lash Book</a></li><li><a href="01-getting-started.html">1. Getting Started</a></li><li><a href="02-values-and-variables.html">2. Values, Variables, and Scope</a></li><li><a href="03-expressions-and-operators.html">3. Expressions and Operators</a></li><li><a href="04-collections-indexing-and-argv.html">4. Collections, Indexing, and argv</a></li><li><a href="05-control-flow.html">5. Control Flow</a></li><li><a href="06-functions-and-value-flow.html">6. Functions and Value Flow</a></li><li><a href="07-shell-integration.html">7. Shell Integration</a></li><li><a href="08-process-control-and-jobs.html">8. Process Control and Jobs</a></li><li><a href="09-compile-time-directives.html">9. Compile-Time Directives</a></li><li><a href="10-diagnostics-and-workflow.html">10. Diagnostics and Workflow</a></li><li><a href="11-bash-differences.html">11. What Lash Does Differently From Bash</a></li><li><a href="12-end-to-end-example.html">12. End-to-End Example</a></li></ul>
+      </nav>
+      <div class="search-results" id="search-results" aria-live="polite"></div>
+    </aside>
+
+    <main class="content" id="main-content">
+      <article><h1>1. Getting Started</h1>
+<p>Lash is a Lua-like scripting language that compiles to Bash.</p>
+<p>The point is not to hide Bash. The point is to keep shell programs readable while adding structure, checks, and a few higher-level conveniences.</p>
+<h2>Your first script</h2>
+<pre><code class="language-lash">#!/usr/bin/env -S lash run
+
+set -euo pipefail
+
+let name = &quot;Lash&quot;
+echo $&quot;Hello from {name}&quot;
+</code></pre>
+<p>Run it:</p>
+<pre><code class="language-bash">lash run script.lash
+</code></pre>
+<h2>The edit loop</h2>
+<p>Use <code>check</code> before you run a script. It catches parser, name, type, flow, and code generation problems before Bash sees the output.</p>
+<pre><code class="language-bash">lash check script.lash
+lash run script.lash
+lash compile script.lash -o script.sh
+bash script.sh
+</code></pre>
+<p>Use <code>format</code> when editing larger files:</p>
+<pre><code class="language-bash">lash format script.lash
+lash format . --check
+</code></pre>
+<h2>File shape</h2>
+<ul>
+<li>Lash files usually end in <code>.lash</code>.</li>
+<li>A leading shebang is allowed and stripped before parsing.</li>
+<li>Line comments use <code>//</code>.</li>
+<li>Block comments use <code>/* ... */</code>.</li>
+</ul>
+<h2>Mental model</h2>
+<ul>
+<li>Lash parses your file and builds an AST.</li>
+<li>Semantic passes validate declarations, functions, loops, constants, and codegen feasibility.</li>
+<li>Code generation emits Bash.</li>
+<li>Shell commands still run as shell commands at runtime.</li>
+</ul>
+<p>That last point matters: Lash gives you structure and earlier errors, but the target language is still Bash.</p>
+</article>
+      <footer class="pager">
+        <a class="pager-link" href="index.html">← The Lash Book</a>
+        <a class="pager-link" href="02-values-and-variables.html">2. Values, Variables, and Scope →</a>
+      </footer>
+    </main>
+  </div>
+
+  <script src="assets/app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+[
+  {
+    "title": "The Lash Book",
+    "url": "index.html",
+    "headings": [
+      "The Lash Book",
+      "How to read this",
+      "Navigation"
+    ],
+    "text": "The Lash Book This guide teaches Lash as a programming language for Bash automation. Lash keeps shell scripts close to Bash, but adds a parser, semantic checks, structured blocks, arrays and maps, compile-time directives, and a small amount of safer syntax around common shell patterns. Use this book for learning and examples. Use the language spec when you need the exact implemented surface. How to read this Read chapters 1-6 first. They cover the Lash syntax you will write most often. Use chapters 7-9 when you need shell interop, jobs, traps, or compile-time directives. Keep chapter 11 nearby when porting Bash; it calls out the behavior that is easy to misread. Navigation See SUMMARY.md ."
+  },
+  {
+    "title": "1. Getting Started",
+    "url": "01-getting-started.html",
+    "headings": [
+      "1. Getting Started",
+      "Your first script",
+      "The edit loop",
+      "File shape",
+      "Mental model"
+    ],
+    "text": "1. Getting Started Lash is a Lua-like scripting language that compiles to Bash. The point is not to hide Bash. The point is to keep shell programs readable while adding structure, checks, and a few higher-level conveniences. Your first script #!/usr/bin/env -S lash run set -euo pipefail let name = &quot;Lash&quot; echo $&quot;Hello from {name}&quot; Run it: lash run script.lash The edit loop Use check before you run a script. It catches parser, name, type, flow, and code generation problems before Bash sees the output. lash check script.lash lash run script.lash lash compile script.lash -o script.sh bash script.sh Use format when editing larger files: lash format script.lash lash format . --check File shape Lash files usually end in .lash . A leading shebang is allowed and stripped before parsing. Line comments use // . Block comments use /* ... */ . Mental model Lash parses your file and builds an AST. Semantic passes validate declarations, functions, loops, constants, and codegen feasibility. Code generation emits Bash. Shell commands still run as shell commands at runtime. That last point matters: Lash gives you structure and earlier errors, but the target language is still Bash."
+  },
+  {
+    "title": "2. Values, Variables, and Scope",
+    "url": "02-values-and-variables.html",
+    "headings": [
+      "2. Values, Variables, and Scope",
+      "Declarations",
+      "Scope",
+      "The discard binding",
+      "Booleans",
+      "Strings"
+    ],
+    "text": "2. Values, Variables, and Scope Lash has simple value categories: numbers, strings, booleans, arrays, maps, and unknown shell-derived values. Declarations var count = 0 let channel = &quot;stable&quot; readonly project = &quot;lash&quot; global var runs = 0 var declares a mutable variable. let declares a Lash-level immutable variable. Reassignment is rejected by lash check . readonly declares a Bash runtime readonly variable and requires an initializer. global declares or assigns in global scope from inside a function. Declarations may omit an initializer for var and let ; the compiler emits an empty value. var output let empty Scope Functions introduce local scope. Variables declared inside a function lower to Bash local unless they are marked global . var mode = &quot;dev&quot; fn set_mode() global mode = &quot;release&quot; var local_note = &quot;only visible here&quot; end Block bodies such as if , for , and switch are checked with scoped symbol rules, so declarations inside a branch do not become a reliable declaration for later code unless declared earlier. The discard binding _ can be used where a binding name is required but the value is intentionally ignored. for _ in 1..3 echo &quot;tick&quot; end The ignored binding can still execute side effects if its initializer is a capture. Lash warns for some suspicious ignored captures. Booleans Boolean literals are true and false . They lower to Bash numeric truth values: true becomes 1 false becomes 0 This means booleans work naturally in Lash arithmetic-style conditions. Strings let plain = &quot;hello&quot; let interpolated = $&quot;hello {name}&quot; let block = [[line one line two]] let interpolated_block = $[[hello {name} line two]] Interpolation placeholders use Lash/Bash identifier paths. For example, {name} and {items[0]} become Bash expansions. Use $&quot;...&quot; or $[[...]] when you want interpolation. Plain strings that look like {name} are treated as plain text and may trigger a warning."
+  },
+  {
+    "title": "3. Expressions and Operators",
+    "url": "03-expressions-and-operators.html",
+    "headings": [
+      "3. Expressions and Operators",
+      "Arithmetic",
+      "String concatenation with `+`",
+      "Comparisons and truthiness",
+      "Regex match",
+      "Logical operators",
+      "Length with `#`",
+      "Range expressions",
+      "Value pipes"
+    ],
+    "text": "3. Expressions and Operators Lash expressions are checked before they are lowered to Bash. Some operators can be used anywhere a value is allowed; others are only supported in specific contexts. Arithmetic var n = 10 n += 2 n -= 1 n *= 3 n /= 2 n %= 4 n++ n-- Arithmetic operators are numeric: * , / , % + , - unary - , unary + Compound assignments other than += require a variable target and numeric operands. String concatenation with + + is numeric unless either side is string-like. let name = &quot;lash&quot; let archive = name + &quot;.tar.gz&quot; Mixed number + string is rejected when the checker can prove the mismatch. Comparisons and truthiness if count &gt; 0 echo &quot;has items&quot; end if name == &quot;lash&quot; echo &quot;matched&quot; end == and != lower to Bash [[ left == right ]] in condition code paths. Numeric comparisons such as &lt; , &gt; , &lt;= , and &gt;= lower to arithmetic tests. For a bare condition like if count , Lash treats numeric non-zero as true. argv is special: bare argv in a condition checks whether any positional arguments exist. Regex match if branch =~ &quot;^main$&quot; echo &quot;protected branch&quot; end =~ lowers to Bash regex matching in condition positions. It is intentionally not supported as a general value expression. Logical operators if ready &amp;&amp; !dry_run echo &quot;apply&quot; end Supported logical operators: ! &amp;&amp; || Length with # let items = [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;] let item_count = #items let first_length = #items[0] let arg_count = #argv echo $&quot;items={item_count}&quot; echo $&quot;first-length={first_length}&quot; echo $&quot;args={arg_count}&quot; # works for identifiers, index access, string literals, array literals, map literals, and argv . Range expressions for i in 1..5 echo $&quot;{i}&quot; end for i in 1..10 step 2 echo $&quot;{i}&quot; end Ranges are only supported as the top-level iterable in for ... in . They lower through seq . Value pipes Value pipes pass the left value as the first argument to a function call on the right. fn wrap(value, prefix = &quot;[&quot;) return prefix + value + &quot;]&quot; end let label = &quot;ok&quot; | wrap(&quot;status=&quot;) As an expression, the right-hand side of | must be a function call. As a standalone statement, pipe handling is more limited and intended for assignment-sink forms supported by the compiler."
+  },
+  {
+    "title": "4. Collections, Indexing, and argv",
+    "url": "04-collections-indexing-and-argv.html",
+    "headings": [
+      "4. Collections, Indexing, and argv",
+      "Arrays",
+      "Array append",
+      "Maps",
+      "Index assignments",
+      "argv"
+    ],
+    "text": "4. Collections, Indexing, and argv Lash arrays and maps lower to Bash arrays. The compiler tracks whether a container is numeric-indexed or string-keyed so accidental mixed indexing can be reported early. Arrays let items = [&quot;alpha&quot;, &quot;beta&quot;, &quot;gamma&quot;] let count = #items echo $&quot;{items[0]}&quot; echo $&quot;count={count}&quot; Numeric arrays lower to Bash indexed arrays. Array append += is overloaded. With arrays, it appends array values. var items = [&quot;alpha&quot;] items += [&quot;beta&quot;, &quot;gamma&quot;] When the right-hand side looks numeric, += is arithmetic. If the compiler cannot tell which mode you intended, it reports an ambiguity. Maps let meta = { &quot;name&quot;: &quot;lash&quot;, &quot;shell&quot;: &quot;bash&quot; } echo $&quot;{meta[&quot;name&quot;]}&quot; Maps are string-keyed containers and lower to Bash associative arrays. Map literal keys must be strings. Do not mix numeric and string keys for the same container. Index assignments var items = [&quot;a&quot;, &quot;b&quot;] items[1] = &quot;changed&quot; var meta = {&quot;name&quot;: &quot;lash&quot;} meta[&quot;version&quot;] = &quot;0.3&quot; Index assignment targets must be named variables. Assigning into an arbitrary expression is rejected for Bash code generation. argv argv represents script positional arguments. let arg_count = #argv echo $&quot;{argv[0]}&quot; echo $&quot;arg-count={arg_count}&quot; for arg in argv echo $&quot;{arg}&quot; end Lash uses zero-based indexing for argv[index] . Bash positional parameters are one-based, so the compiler lowers argv[0] to the first Bash argument. Bare argv is allowed in contexts where the compiler can expand it safely, such as declarations, function arguments, for ranges, appends, and length checks. let args = argv items += argv Assignment to argv is not supported."
+  },
+  {
+    "title": "5. Control Flow",
+    "url": "05-control-flow.html",
+    "headings": [
+      "5. Control Flow",
+      "if / elif / else",
+      "while and until",
+      "for over ranges",
+      "for over arrays, argv, and globs",
+      "select",
+      "switch",
+      "break and continue depths"
+    ],
+    "text": "5. Control Flow Lash uses end to close structured blocks. That is different from Bash, where if closes with fi , loops close with done , and case closes with esac . if / elif / else if mode == &quot;release&quot; echo &quot;release&quot; elif mode == &quot;debug&quot; echo &quot;debug&quot; else echo &quot;default&quot; end Conditions can use comparisons, regex matches, logical operators, or numeric truthiness. while and until var i = 0 while i &lt; 3 echo $&quot;{i}&quot; i++ end until i == 0 i-- end The compiler warns on constant conditions and unreachable loop bodies when it can prove them. for over ranges for i in 1..5 echo $&quot;{i}&quot; end for i in 10..2 step -2 echo $&quot;{i}&quot; end Ranges lower to seq . The compiler warns when a constant step does not move toward the range end. for over arrays, argv, and globs let names = [&quot;a&quot;, &quot;b&quot;, &quot;c&quot;] for name in names echo $&quot;{name}&quot; end for arg in argv echo $&quot;{arg}&quot; end for file in ./dist/*.tar.gz echo $&quot;{file}&quot; end Glob loops lower directly to Bash word/glob iteration and follow the shell's active glob options. select select choice in [&quot;yes&quot;, &quot;no&quot;] echo $&quot;{choice}&quot; break end select lowers to Bash select . It can iterate over arrays, argv , ranges, or globs. switch enum Mode Dev Release end switch mode case Mode::Dev, &quot;debug&quot;: echo &quot;debug&quot; case Mode::Release: echo &quot;release&quot; case _: echo &quot;fallback&quot; end switch lowers to Bash case . case _: is the wildcard and cannot be combined with other patterns. Duplicate constant case patterns are diagnosed. break and continue depths while outer &lt; 10 while inner &lt; 10 continue 2 end end break and continue are only valid inside loops. Optional depths must be positive integer literals."
+  },
+  {
+    "title": "6. Functions and Value Flow",
+    "url": "06-functions-and-value-flow.html",
+    "headings": [
+      "6. Functions and Value Flow",
+      "Declaring and calling functions",
+      "Return values",
+      "Function arguments",
+      "Array-like parameters",
+      "Value pipes",
+      "Unknown shell-derived values"
+    ],
+    "text": "6. Functions and Value Flow Lash functions lower to Bash functions, but parameter binding and return values are more structured. Declaring and calling functions fn greet(name, prefix = &quot;hello&quot;) return $&quot;{prefix}, {name}&quot; end let message = greet(&quot;world&quot;) echo $&quot;{message}&quot; Function arity is checked. Parameters with default values are optional. Required parameters must be passed by the caller. Return values return expr does not lower to Bash return &lt;number&gt; . It emits the expression with echo , then returns status 0 . fn archive_name(name) return name + &quot;.tar.gz&quot; end This makes Lash functions usable in value expressions because Bash captures command output from functions. Use bare return when you only want to stop the function successfully. Function arguments Arguments are rendered as shell arguments. Strings are quoted for the generated Bash. fn show(value) echo $&quot;{value}&quot; end show(&quot;hello world&quot;) Passing argv forwards all script arguments: fn forward() printf '%s\\n' &quot;$@&quot; end forward(argv) Array-like parameters When the compiler sees an array argument for a function parameter, it can lower that parameter as an array in the generated function body. fn print_all(items) for item in items echo $&quot;{item}&quot; end end let names = [&quot;a&quot;, &quot;b&quot;] print_all(names) Value pipes fn suffix(value, ext) return value + ext end let archive = &quot;Lash-linux-x64&quot; | suffix(&quot;.tar.gz&quot;) In a value pipe, the left value becomes the first argument to the function call on the right. Unknown shell-derived values Captures such as $(...) often produce unknown values because Bash decides the runtime output. Use explicit checks and conversions where the meaning matters."
+  },
+  {
+    "title": "7. Shell Integration",
+    "url": "07-shell-integration.html",
+    "headings": [
+      "7. Shell Integration",
+      "Bare shell commands",
+      "`sh` statements",
+      "Command substitution",
+      "`test` captures",
+      "Array spread in shell payloads",
+      "Process substitution",
+      "Redirects",
+      "Here input"
+    ],
+    "text": "7. Shell Integration Lash is built for shell scripts. It supports many Bash features directly, but it still parses known Lash syntax first. Bare shell commands Most shell-like lines that are not recognized as Lash statements become raw command statements: set -euo pipefail shopt -s nullglob export RELEASE_CHANNEL=stable source ./env.sh echo &quot;building...&quot; The compiler recognizes common shell builtins such as set , export , shopt , alias , source , . , unset , declare , and local for validation and warnings. Known Lash statement prefixes such as if , for , var , let , return , trap , and wait are parsed as Lash syntax. sh statements Use sh &quot;...&quot; when you want to force a string literal to be emitted as shell code. sh &quot;printf '%s\\n' \\&quot;$HOME\\&quot;&quot; The payload must be a string literal. This restriction keeps Bash code generation predictable. Command substitution let branch = $(git rev-parse --abbrev-ref HEAD) echo $&quot;branch={branch}&quot; Lash preserves Bash command substitution syntax by rewriting it internally before parsing. Interpolated command segments are supported: let dist = &quot;./dist&quot; let archives = $(find $&quot;\\&quot;{dist}\\&quot; -maxdepth 1 -name '*.tar.gz'&quot;) test captures let path = &quot;.git&quot; let has_git = $(test $&quot;-d \\&quot;{path}\\&quot;&quot;) if has_git == 1 echo &quot;repo&quot; end $(test &quot;...&quot;) lowers to a Bash [[ ... ]] check that echoes 1 or 0 . The test payload must be a string literal. Array spread in shell payloads Inside shell payload strings, $name... expands a Lash array variable as Bash &quot;${name[@]}&quot; . let files = [&quot;a.txt&quot;, &quot;b.txt&quot;] sh &quot;printf '%s\\n' $files...&quot; Process substitution diff &lt;(sort left.txt) &lt;(sort right.txt) Input process substitution &lt;(...) and output process substitution &gt;(...) are supported and lower back to Bash process substitution. Redirects Redirect expressions are supported as standalone expression statements. echo &quot;log&quot; &gt; &quot;build.log&quot; echo &quot;more&quot; &gt;&gt; &quot;build.log&quot; echo &quot;error&quot; 2&gt; &quot;error.log&quot; echo &quot;all&quot; &amp;&gt; &quot;combined.log&quot; cat &lt; &quot;input.txt&quot; exec &lt;&gt; &quot;state.db&quot; Supported redirect operators: &gt; stdout truncate &gt;&gt; stdout append 2&gt; stderr truncate 2&gt;&gt; stderr append &amp;&gt; stdout and stderr truncate &amp;&gt;&gt; stdout and stderr append &lt; stdin from file &lt;&gt; read/write file n&gt;&amp;m duplicate file descriptor n&gt;&amp;- close file descriptor Here input cat &lt;&lt; &quot;one line&quot; cat &lt;&lt; [[line one line two]] cat &lt;&lt;- [[ line with leading tab next line]] Single-line &lt;&lt; string payloads lower to Bash here-strings. Multiline literals lower to heredocs. &lt;&lt;- requires a multiline string literal and lowers to a tab-stripping heredoc. The deprecated Bash spelling &lt;&lt;&lt; is not the Lash syntax. Use &lt;&lt; ."
+  },
+  {
+    "title": "8. Process Control and Jobs",
+    "url": "08-process-control-and-jobs.html",
+    "headings": [
+      "8. Process Control and Jobs",
+      "shift",
+      "subshell",
+      "Capturing subshell status or pid",
+      "coproc",
+      "wait",
+      "wait jobs",
+      "trap and untrap"
+    ],
+    "text": "8. Process Control and Jobs Lash exposes Bash process control with structured syntax for the common cases. shift shift shift 2 shift defaults to 1 . Lash guards the generated Bash so shifting past the end clears the argument list instead of failing halfway through. subshell subshell cd build make end subshell ... end lowers to a Bash subshell block: ( ... ) Capturing subshell status or pid var status = 0 subshell into status false end var pid = 0 subshell into pid sleep 1 end &amp; For a foreground subshell, into captures $? . For a background subshell, into captures $! . coproc var copid = 0 coproc into copid sh &quot;cat&quot; end coproc ... end lowers to Bash coproc { ... } . into captures ${COPROC_PID} . wait wait wait pid wait pid into status wait lowers to Bash wait . into captures the resulting exit status. wait jobs subshell sleep 1 end &amp; coproc sleep 1 end wait jobs wait jobs waits for jobs that Lash tracks from background subshell and coproc statements in the current analysis scope. It does not discover arbitrary jobs started by raw shell commands. The compiler warns when wait jobs has no tracked jobs. trap and untrap fn cleanup() echo &quot;cleanup&quot; end trap EXIT into cleanup() trap INT &quot;echo interrupted&quot; untrap INT trap SIGNAL into function() registers a Lash function as the handler. Handler calls cannot include arguments. trap SIGNAL &quot;command&quot; emits a Bash command handler. untrap SIGNAL clears the trap. Valid trap signals are checked by the compiler."
+  },
+  {
+    "title": "9. Compile-Time Directives",
+    "url": "09-compile-time-directives.html",
+    "headings": [
+      "9. Compile-Time Directives",
+      "Conditional directives",
+      "Defining and undefining symbols",
+      "Importing Lash source",
+      "Importing file text into a variable",
+      "Raw blocks",
+      "Build-time diagnostics"
+    ],
+    "text": "9. Compile-Time Directives Directives run before Lash parsing. They are useful for file inclusion, conditional compilation, raw shell passthrough, and build-time diagnostics. Directive lines start with @ . Conditional directives @define ENABLE_LOGS true @if ENABLE_LOGS == true echo &quot;logs enabled&quot; @elif DEBUG echo &quot;debug enabled&quot; @else echo &quot;quiet&quot; @end Supported directive expression features: symbol presence checks literals == != ! &amp;&amp; || parentheses Use @end , not @endif . Defining and undefining symbols @define MODE release @define FEATURE_X=true @undef FEATURE_X Definitions may use either whitespace or = : @define NAME value @define NAME=value Importing Lash source @import &quot;./shared.lash&quot; Plain @import includes and preprocesses another file. Relative paths are resolved relative to the file containing the directive. @import is only allowed at file/preprocessor scope, not inside runtime blocks. Importing file text into a variable @import &quot;./template.txt&quot; into template echo $&quot;{template}&quot; @import &quot;path&quot; into name reads file text into a multiline string. If name is already known at top level, the directive assigns it. Otherwise it creates a new let . Imported text cannot contain ]] when using into , because the preprocessor represents it as a Lash multiline string literal. Raw blocks @raw case &quot;$1&quot; in --help) echo help ;; esac @end Raw block content is passed through as command text while the current directive branch is active. Build-time diagnostics @warning This script assumes GNU sed. @if PLATFORM == windows @error Windows is not supported by this script. @end @warning emits a non-fatal diagnostic. @error stops compilation when the active branch is reached."
+  },
+  {
+    "title": "10. Diagnostics and Workflow",
+    "url": "10-diagnostics-and-workflow.html",
+    "headings": [
+      "10. Diagnostics and Workflow",
+      "Check first",
+      "Run and compile",
+      "Format and watch",
+      "Diagnostic groups",
+      "Common warnings",
+      "A useful debugging loop"
+    ],
+    "text": "10. Diagnostics and Workflow Lash tries to fail before Bash runs when a problem can be found statically. Check first lash check script.lash check runs preprocessing, parsing, semantic analysis, warnings, and codegen feasibility checks without writing or running Bash output. Run and compile lash run script.lash arg1 arg2 lash compile script.lash -o script.sh bash script.sh run compiles to temporary Bash and executes it. compile writes the Bash output so you can inspect or run it yourself. Format and watch lash format . lash format . --check lash watch script.lash lash watch src/ Use format --check in CI and watch when iterating on scripts. Diagnostic groups Diagnostic codes are grouped by phase: E000-E001 : lexing and parsing E010-E015 : preprocessor errors E110-E125 : names, declarations, scope, traps, enums, and into E200-E203 : type and container compatibility E300-E303 : flow and constant-safety checks E400-E401 : code generation feasibility W010 , W500-W522 : warnings Common warnings Warnings include: unreachable statements unused variables, parameters, and functions shadowed variables constant conditions suspicious missing interpolation malformed shell expansions suspicious heredoc payloads wait jobs with no tracked jobs non-positive constant wait targets missing or malformed shebangs Warnings are there to make shell scripts less surprising. Treat them as design feedback, especially in automation code. A useful debugging loop Run lash check . Fix the first real error. Re-run lash check . If generated Bash behavior is surprising, run lash compile and inspect the output. Use --verbose on CLI commands when you need phase and tool resolution details."
+  },
+  {
+    "title": "11. What Lash Does Differently From Bash",
+    "url": "11-bash-differences.html",
+    "headings": [
+      "11. What Lash Does Differently From Bash",
+      "Blocks close with `end`",
+      "Declarations are checked",
+      "Conditions are expressions",
+      "Booleans are numeric at runtime",
+      "Functions return values by output",
+      "argv is zero-based",
+      "Maps are Bash associative arrays",
+      "Ranges are Lash syntax",
+      "wait jobs is Lash-tracked",
+      "Bare Bash is still supported"
+    ],
+    "text": "11. What Lash Does Differently From Bash Lash compiles to Bash, but it is not Bash syntax with a different file extension. This chapter lists the differences that matter most when reading or porting scripts. Blocks close with end if ready echo &quot;ready&quot; end for file in ./*.lash echo $&quot;{file}&quot; end Generated Bash uses fi , done , and esac ; Lash source uses end . Declarations are checked Bash lets you assign almost anywhere. Lash distinguishes declaration from assignment. let name = &quot;lash&quot; name = &quot;other&quot; // error Variables must be declared before use. let cannot be reassigned. readonly also lowers to Bash readonly behavior. Conditions are expressions if count &gt; 0 echo &quot;non-zero&quot; end Lash generates Bash tests for you. Numeric comparisons use arithmetic tests. String equality uses [[ ... ]] . Regex =~ is supported in conditions only. Booleans are numeric at runtime true lowers to 1 ; false lowers to 0 . Functions return values by output fn name() return &quot;lash&quot; end This emits echo &quot;lash&quot; followed by return 0 . It is designed for command-substitution style value flow, not Bash numeric return status. argv is zero-based let arg_count = #argv echo $&quot;{argv[0]}&quot; echo $&quot;{arg_count}&quot; Bash positional parameters are one-based after $0 . Lash argv[0] means the first script argument. Maps are Bash associative arrays let meta = {&quot;name&quot;: &quot;lash&quot;} echo $&quot;{meta[&quot;name&quot;]}&quot; The compiler lowers string-keyed maps to Bash associative arrays and enforces string keys for map literals. Ranges are Lash syntax for i in 1..5 step 2 echo $&quot;{i}&quot; end Ranges lower through seq and are only supported as for iterables. wait jobs is Lash-tracked wait jobs waits for background subshell and coproc jobs the compiler tracks. It does not scan arbitrary Bash jobs started by raw command lines. Bare Bash is still supported These shell forms are intentionally accepted: set -euo pipefail export NAME=value source ./env.sh shopt -s nullglob alias ll='ls -l' unset NAME declare -A table local value=1 Command substitution, process substitution, globs, redirects, heredocs, traps, background jobs, and coproc are also supported. Lash adds structure around them; it does not remove Bash from the language."
+  },
+  {
+    "title": "12. End-to-End Example",
+    "url": "12-end-to-end-example.html",
+    "headings": [
+      "12. End-to-End Example",
+      "What this uses",
+      "Check it before running"
+    ],
+    "text": "12. End-to-End Example This script packages files from dist , writes checksums, and demonstrates common Lash patterns. #!/usr/bin/env -S lash run set -euo pipefail shopt -s nullglob let dist = &quot;./dist&quot; let checksum_file = dist + &quot;/SHA256SUMS&quot; if $(test $&quot;-d \\&quot;{dist}\\&quot;&quot;) != 1 echo $&quot;missing directory: {dist}&quot; exit 1 end fn checksum(path) return $(sha256sum &quot;$path&quot; | cut -d' ' -f1) end var count = 0 echo &quot;&quot; &gt; $&quot;{checksum_file}&quot; for file in ./dist/*.tar.gz let sum = checksum(file) echo $&quot;{sum} {file}&quot; &gt;&gt; $&quot;{checksum_file}&quot; count += 1 end if count == 0 echo &quot;no archives found&quot; exit 1 end echo $&quot;wrote {count} checksums to {checksum_file}&quot; What this uses set and shopt as bare Bash command statements immutable let bindings for configuration $(test &quot;...&quot;) to turn a Bash test into 1 or 0 a function that returns a value through output a glob for loop arithmetic += string interpolation redirection with &gt; and &gt;&gt; Check it before running lash check checksums.lash lash run checksums.lash When behavior is unclear, compile the script and inspect the Bash: lash compile checksums.lash -o checksums.sh sed -n '1,200p' checksums.sh"
+  }
+]

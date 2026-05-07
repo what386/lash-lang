@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>10. Diagnostics and Workflow - The Lash Book</title>
+  <script>
+    (() => {
+      const stored = (() => {
+        try {
+          return localStorage.getItem("lash-docs-theme");
+        } catch {
+          return null;
+        }
+      })();
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = stored || (prefersDark ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">Menu</button>
+    <a class="brand" href="index.html">The Lash Book</a>
+    <label class="search-wrap" for="search-input">
+      <span class="search-label">Search</span>
+      <input id="search-input" type="search" placeholder="Find chapter text..." autocomplete="off">
+    </label>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme" aria-pressed="false">
+      <span class="theme-toggle-icon" aria-hidden="true"></span>
+      <span class="theme-toggle-text">Theme</span>
+    </button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav>
+        <ul class="chapter-list"><li><a href="index.html">The Lash Book</a></li><li><a href="01-getting-started.html">1. Getting Started</a></li><li><a href="02-values-and-variables.html">2. Values, Variables, and Scope</a></li><li><a href="03-expressions-and-operators.html">3. Expressions and Operators</a></li><li><a href="04-collections-indexing-and-argv.html">4. Collections, Indexing, and argv</a></li><li><a href="05-control-flow.html">5. Control Flow</a></li><li><a href="06-functions-and-value-flow.html">6. Functions and Value Flow</a></li><li><a href="07-shell-integration.html">7. Shell Integration</a></li><li><a href="08-process-control-and-jobs.html">8. Process Control and Jobs</a></li><li><a href="09-compile-time-directives.html">9. Compile-Time Directives</a></li><li><a href="10-diagnostics-and-workflow.html">10. Diagnostics and Workflow</a></li><li><a href="11-bash-differences.html">11. What Lash Does Differently From Bash</a></li><li><a href="12-end-to-end-example.html">12. End-to-End Example</a></li></ul>
+      </nav>
+      <div class="search-results" id="search-results" aria-live="polite"></div>
+    </aside>
+
+    <main class="content" id="main-content">
+      <article><h1>10. Diagnostics and Workflow</h1>
+<p>Lash tries to fail before Bash runs when a problem can be found statically.</p>
+<h2>Check first</h2>
+<pre><code class="language-bash">lash check script.lash
+</code></pre>
+<p><code>check</code> runs preprocessing, parsing, semantic analysis, warnings, and codegen feasibility checks without writing or running Bash output.</p>
+<h2>Run and compile</h2>
+<pre><code class="language-bash">lash run script.lash arg1 arg2
+lash compile script.lash -o script.sh
+bash script.sh
+</code></pre>
+<p><code>run</code> compiles to temporary Bash and executes it. <code>compile</code> writes the Bash output so you can inspect or run it yourself.</p>
+<h2>Format and watch</h2>
+<pre><code class="language-bash">lash format .
+lash format . --check
+lash watch script.lash
+lash watch src/
+</code></pre>
+<p>Use <code>format --check</code> in CI and <code>watch</code> when iterating on scripts.</p>
+<h2>Diagnostic groups</h2>
+<p>Diagnostic codes are grouped by phase:</p>
+<ul>
+<li><code>E000-E001</code>: lexing and parsing</li>
+<li><code>E010-E015</code>: preprocessor errors</li>
+<li><code>E110-E125</code>: names, declarations, scope, traps, enums, and <code>into</code></li>
+<li><code>E200-E203</code>: type and container compatibility</li>
+<li><code>E300-E303</code>: flow and constant-safety checks</li>
+<li><code>E400-E401</code>: code generation feasibility</li>
+<li><code>W010</code>, <code>W500-W522</code>: warnings</li>
+</ul>
+<h2>Common warnings</h2>
+<p>Warnings include:</p>
+<ul>
+<li>unreachable statements</li>
+<li>unused variables, parameters, and functions</li>
+<li>shadowed variables</li>
+<li>constant conditions</li>
+<li>suspicious missing interpolation</li>
+<li>malformed shell expansions</li>
+<li>suspicious heredoc payloads</li>
+<li><code>wait jobs</code> with no tracked jobs</li>
+<li>non-positive constant <code>wait</code> targets</li>
+<li>missing or malformed shebangs</li>
+</ul>
+<p>Warnings are there to make shell scripts less surprising. Treat them as design feedback, especially in automation code.</p>
+<h2>A useful debugging loop</h2>
+<ol>
+<li>Run <code>lash check</code>.</li>
+<li>Fix the first real error.</li>
+<li>Re-run <code>lash check</code>.</li>
+<li>If generated Bash behavior is surprising, run <code>lash compile</code> and inspect the output.</li>
+<li>Use <code>--verbose</code> on CLI commands when you need phase and tool resolution details.</li>
+</ol>
+</article>
+      <footer class="pager">
+        <a class="pager-link" href="09-compile-time-directives.html">← 9. Compile-Time Directives</a>
+        <a class="pager-link" href="11-bash-differences.html">11. What Lash Does Differently From Bash →</a>
+      </footer>
+    </main>
+  </div>
+
+  <script src="assets/app.js" defer></script>
+</body>
+</html>

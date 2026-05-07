@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>6. Functions and Value Flow - The Lash Book</title>
+  <script>
+    (() => {
+      const stored = (() => {
+        try {
+          return localStorage.getItem("lash-docs-theme");
+        } catch {
+          return null;
+        }
+      })();
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = stored || (prefersDark ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">Menu</button>
+    <a class="brand" href="index.html">The Lash Book</a>
+    <label class="search-wrap" for="search-input">
+      <span class="search-label">Search</span>
+      <input id="search-input" type="search" placeholder="Find chapter text..." autocomplete="off">
+    </label>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme" aria-pressed="false">
+      <span class="theme-toggle-icon" aria-hidden="true"></span>
+      <span class="theme-toggle-text">Theme</span>
+    </button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav>
+        <ul class="chapter-list"><li><a href="index.html">The Lash Book</a></li><li><a href="01-getting-started.html">1. Getting Started</a></li><li><a href="02-values-and-variables.html">2. Values, Variables, and Scope</a></li><li><a href="03-expressions-and-operators.html">3. Expressions and Operators</a></li><li><a href="04-collections-indexing-and-argv.html">4. Collections, Indexing, and argv</a></li><li><a href="05-control-flow.html">5. Control Flow</a></li><li><a href="06-functions-and-value-flow.html">6. Functions and Value Flow</a></li><li><a href="07-shell-integration.html">7. Shell Integration</a></li><li><a href="08-process-control-and-jobs.html">8. Process Control and Jobs</a></li><li><a href="09-compile-time-directives.html">9. Compile-Time Directives</a></li><li><a href="10-diagnostics-and-workflow.html">10. Diagnostics and Workflow</a></li><li><a href="11-bash-differences.html">11. What Lash Does Differently From Bash</a></li><li><a href="12-end-to-end-example.html">12. End-to-End Example</a></li></ul>
+      </nav>
+      <div class="search-results" id="search-results" aria-live="polite"></div>
+    </aside>
+
+    <main class="content" id="main-content">
+      <article><h1>6. Functions and Value Flow</h1>
+<p>Lash functions lower to Bash functions, but parameter binding and return values are more structured.</p>
+<h2>Declaring and calling functions</h2>
+<pre><code class="language-lash">fn greet(name, prefix = &quot;hello&quot;)
+    return $&quot;{prefix}, {name}&quot;
+end
+
+let message = greet(&quot;world&quot;)
+echo $&quot;{message}&quot;
+</code></pre>
+<p>Function arity is checked. Parameters with default values are optional. Required parameters must be passed by the caller.</p>
+<h2>Return values</h2>
+<p><code>return expr</code> does not lower to Bash <code>return &lt;number&gt;</code>. It emits the expression with <code>echo</code>, then returns status <code>0</code>.</p>
+<pre><code class="language-lash">fn archive_name(name)
+    return name + &quot;.tar.gz&quot;
+end
+</code></pre>
+<p>This makes Lash functions usable in value expressions because Bash captures command output from functions.</p>
+<p>Use bare <code>return</code> when you only want to stop the function successfully.</p>
+<h2>Function arguments</h2>
+<p>Arguments are rendered as shell arguments. Strings are quoted for the generated Bash.</p>
+<pre><code class="language-lash">fn show(value)
+    echo $&quot;{value}&quot;
+end
+
+show(&quot;hello world&quot;)
+</code></pre>
+<p>Passing <code>argv</code> forwards all script arguments:</p>
+<pre><code class="language-lash">fn forward()
+    printf '%s\n' &quot;$@&quot;
+end
+
+forward(argv)
+</code></pre>
+<h2>Array-like parameters</h2>
+<p>When the compiler sees an array argument for a function parameter, it can lower that parameter as an array in the generated function body.</p>
+<pre><code class="language-lash">fn print_all(items)
+    for item in items
+        echo $&quot;{item}&quot;
+    end
+end
+
+let names = [&quot;a&quot;, &quot;b&quot;]
+print_all(names)
+</code></pre>
+<h2>Value pipes</h2>
+<pre><code class="language-lash">fn suffix(value, ext)
+    return value + ext
+end
+
+let archive = &quot;Lash-linux-x64&quot; | suffix(&quot;.tar.gz&quot;)
+</code></pre>
+<p>In a value pipe, the left value becomes the first argument to the function call on the right.</p>
+<h2>Unknown shell-derived values</h2>
+<p>Captures such as <code>$(...)</code> often produce <code>unknown</code> values because Bash decides the runtime output. Use explicit checks and conversions where the meaning matters.</p>
+</article>
+      <footer class="pager">
+        <a class="pager-link" href="05-control-flow.html">← 5. Control Flow</a>
+        <a class="pager-link" href="07-shell-integration.html">7. Shell Integration →</a>
+      </footer>
+    </main>
+  </div>
+
+  <script src="assets/app.js" defer></script>
+</body>
+</html>

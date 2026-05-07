@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>9. Compile-Time Directives - The Lash Book</title>
+  <script>
+    (() => {
+      const stored = (() => {
+        try {
+          return localStorage.getItem("lash-docs-theme");
+        } catch {
+          return null;
+        }
+      })();
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      document.documentElement.dataset.theme = stored || (prefersDark ? "dark" : "light");
+    })();
+  </script>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">Menu</button>
+    <a class="brand" href="index.html">The Lash Book</a>
+    <label class="search-wrap" for="search-input">
+      <span class="search-label">Search</span>
+      <input id="search-input" type="search" placeholder="Find chapter text..." autocomplete="off">
+    </label>
+    <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch color theme" aria-pressed="false">
+      <span class="theme-toggle-icon" aria-hidden="true"></span>
+      <span class="theme-toggle-text">Theme</span>
+    </button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar">
+      <nav>
+        <ul class="chapter-list"><li><a href="index.html">The Lash Book</a></li><li><a href="01-getting-started.html">1. Getting Started</a></li><li><a href="02-values-and-variables.html">2. Values, Variables, and Scope</a></li><li><a href="03-expressions-and-operators.html">3. Expressions and Operators</a></li><li><a href="04-collections-indexing-and-argv.html">4. Collections, Indexing, and argv</a></li><li><a href="05-control-flow.html">5. Control Flow</a></li><li><a href="06-functions-and-value-flow.html">6. Functions and Value Flow</a></li><li><a href="07-shell-integration.html">7. Shell Integration</a></li><li><a href="08-process-control-and-jobs.html">8. Process Control and Jobs</a></li><li><a href="09-compile-time-directives.html">9. Compile-Time Directives</a></li><li><a href="10-diagnostics-and-workflow.html">10. Diagnostics and Workflow</a></li><li><a href="11-bash-differences.html">11. What Lash Does Differently From Bash</a></li><li><a href="12-end-to-end-example.html">12. End-to-End Example</a></li></ul>
+      </nav>
+      <div class="search-results" id="search-results" aria-live="polite"></div>
+    </aside>
+
+    <main class="content" id="main-content">
+      <article><h1>9. Compile-Time Directives</h1>
+<p>Directives run before Lash parsing. They are useful for file inclusion, conditional compilation, raw shell passthrough, and build-time diagnostics.</p>
+<p>Directive lines start with <code>@</code>.</p>
+<h2>Conditional directives</h2>
+<pre><code class="language-lash">@define ENABLE_LOGS true
+
+@if ENABLE_LOGS == true
+echo &quot;logs enabled&quot;
+@elif DEBUG
+echo &quot;debug enabled&quot;
+@else
+echo &quot;quiet&quot;
+@end
+</code></pre>
+<p>Supported directive expression features:</p>
+<ul>
+<li>symbol presence checks</li>
+<li>literals</li>
+<li><code>==</code></li>
+<li><code>!=</code></li>
+<li><code>!</code></li>
+<li><code>&amp;&amp;</code></li>
+<li><code>||</code></li>
+<li>parentheses</li>
+</ul>
+<p>Use <code>@end</code>, not <code>@endif</code>.</p>
+<h2>Defining and undefining symbols</h2>
+<pre><code class="language-lash">@define MODE release
+@define FEATURE_X=true
+@undef FEATURE_X
+</code></pre>
+<p>Definitions may use either whitespace or <code>=</code>:</p>
+<pre><code class="language-lash">@define NAME value
+@define NAME=value
+</code></pre>
+<h2>Importing Lash source</h2>
+<pre><code class="language-lash">@import &quot;./shared.lash&quot;
+</code></pre>
+<p>Plain <code>@import</code> includes and preprocesses another file. Relative paths are resolved relative to the file containing the directive.</p>
+<p><code>@import</code> is only allowed at file/preprocessor scope, not inside runtime blocks.</p>
+<h2>Importing file text into a variable</h2>
+<pre><code class="language-lash">@import &quot;./template.txt&quot; into template
+echo $&quot;{template}&quot;
+</code></pre>
+<p><code>@import &quot;path&quot; into name</code> reads file text into a multiline string. If <code>name</code> is already known at top level, the directive assigns it. Otherwise it creates a new <code>let</code>.</p>
+<p>Imported text cannot contain <code>]]</code> when using <code>into</code>, because the preprocessor represents it as a Lash multiline string literal.</p>
+<h2>Raw blocks</h2>
+<pre><code class="language-lash">@raw
+case &quot;$1&quot; in
+  --help) echo help ;;
+esac
+@end
+</code></pre>
+<p>Raw block content is passed through as command text while the current directive branch is active.</p>
+<h2>Build-time diagnostics</h2>
+<pre><code class="language-lash">@warning This script assumes GNU sed.
+
+@if PLATFORM == windows
+@error Windows is not supported by this script.
+@end
+</code></pre>
+<p><code>@warning</code> emits a non-fatal diagnostic. <code>@error</code> stops compilation when the active branch is reached.</p>
+</article>
+      <footer class="pager">
+        <a class="pager-link" href="08-process-control-and-jobs.html">← 8. Process Control and Jobs</a>
+        <a class="pager-link" href="10-diagnostics-and-workflow.html">10. Diagnostics and Workflow →</a>
+      </footer>
+    </main>
+  </div>
+
+  <script src="assets/app.js" defer></script>
+</body>
+</html>
