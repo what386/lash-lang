@@ -29,3 +29,4 @@ gen-package:
     just pack-binaries --suffix -runtime
     just build-all-release
     just pack-binaries --suffix -self-contained
+    scripts/checksums.lash

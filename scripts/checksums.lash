@@ -1,0 +1,56 @@
+#!/bin/env -S lash run
+
+set -euo pipefail
+
+readonly DIST_DIR = "./dist"
+readonly OUTPUT_FILE = "SHA256SUMS"
+
+fn show_help()
+    echo [[
+    Usage: checksums.lash
+
+    Generate SHA-256 checksums for regular files in ./dist.
+    Output: ./dist/SHA256SUMS
+    ]]
+end
+
+fn file_exists(path)
+    return $(test $"-f \"{path}\"") == 1
+end
+
+if #argv > 0
+    let arg = argv[0]
+    if arg == "-h" || arg == "--help"
+        show_help()
+        exit 0
+    end
+end
+
+if $(test $"-d \"{DIST_DIR}\"") != 1
+    echo "Error: dist directory not found at" DIST_DIR
+    exit 1
+end
+
+cd "$DIST_DIR"
+
+var lines = []
+for file in ./*
+    if file == "./" + OUTPUT_FILE
+        continue
+    end
+
+    if !file_exists(file)
+        continue
+    end
+
+    let checksum = $(sha256sum "$file" | cut -d' ' -f1)
+    lines += [checksum + "  " + file]
+end
+
+if #lines == 0
+    echo "No files found in ./dist to checksum."
+    exit 1
+end
+
+printf '%s\n' "${lines[@]}" > "$OUTPUT_FILE"
+echo "Wrote checksums:" "$DIST_DIR/$OUTPUT_FILE"
